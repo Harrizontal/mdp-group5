@@ -47,6 +47,16 @@ class BluetoothConnectionService internal constructor(mHandler: Handler){
     @Synchronized
     internal fun connect(device: BluetoothDevice, handler: Handler) {
         Log.d("BCS","Connecting to: ${device.name} ${device.address}")
+
+        // check if there is ongoing connection to bluetooth
+        // if so, stop it
+        if (connectedThread != null) {
+            connectedThread!!.toStop()
+            connectedThread!!.cancel()
+
+            connectedThread = null
+        }
+
         myHandler = handler
         setState(BluetoothConstants.STATE_CONNECTING)
         connectThread = ConnectThread(device)

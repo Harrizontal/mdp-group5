@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:app="http://schemas.android.com/apk/res-auto" xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+            android:id="@+id/secure_connect_scan"
+            android:icon="@drawable/ic_action_device_access_bluetooth_searching"
+            android:title="Connect" app:showAsAction="ifRoom"/>
+
+    <item
+            android:id="@+id/insecure_connect_scan"
+            android:title="Test" app:showAsAction="never"/>
+
+
+</menu>
