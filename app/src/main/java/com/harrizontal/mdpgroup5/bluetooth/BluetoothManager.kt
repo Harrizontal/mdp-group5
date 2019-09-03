@@ -10,7 +10,7 @@ class BluetoothManager private constructor() : Serializable {
     private val listBluetoothConnectionServices = ArrayList<BluetoothConnectionService>()
     private val devices = ArrayList<BluetoothDevice>()
 
-//    fun addDevice(device: BluetoothDevice, handler: Handler) {
+//    fun addDevice(device: BTDevice, handler: Handler) {
 //
 //        var deviceAdded: Boolean = false
 //        devices.map {

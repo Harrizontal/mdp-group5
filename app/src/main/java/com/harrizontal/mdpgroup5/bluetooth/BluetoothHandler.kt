@@ -3,7 +3,7 @@ package com.harrizontal.mdpgroup5.bluetooth
 import android.os.Handler
 import android.os.Message
 import android.util.Log
-import com.harrizontal.mdpgroup5.BluetoothConstants
+import com.harrizontal.mdpgroup5.constants.BluetoothConstants
 
 
 class BluetoothHandler: Handler(){

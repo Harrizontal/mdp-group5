@@ -15,6 +15,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.harrizontal.mdpgroup5.adapter.RecycleAdapter
+import com.harrizontal.mdpgroup5.bluetooth.BTDevice
 
 class DeviceListActivity : Activity() {
     var EXTRA_DEVICE_ADDRESS = "device_address"
@@ -22,8 +23,8 @@ class DeviceListActivity : Activity() {
     private lateinit var bluetoothAdapter: BluetoothAdapter
     private lateinit var recycleAdapter: RecycleAdapter
 
-    val pairedBluetooth: ArrayList<String> = ArrayList()
-    val bluetooths: ArrayList<String> = ArrayList()
+    val pairedBluetooth: ArrayList<BTDevice> = ArrayList()
+    val bluetooths: ArrayList<BTDevice> = ArrayList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,7 +39,7 @@ class DeviceListActivity : Activity() {
         registerReceiver(mReceiver, filter)
 
         bluetoothAdapter.startDiscovery()
-        setResult(Activity.RESULT_CANCELED)
+        setResult(RESULT_CANCELED)
 
         // for bonded devices
         val pairedRecycleView = findViewById<RecyclerView>(R.id.list_paired)
@@ -48,11 +49,9 @@ class DeviceListActivity : Activity() {
         pairedRecycleView.adapter = pairedRecycleAdapter
 
         for (device in pairedDevices) {
-            pairedBluetooth.add(device.address)
+            pairedBluetooth.add(BTDevice(device.name,device.address,device.bluetoothClass.deviceClass.toString()))
             pairedRecycleAdapter.notifyDataSetChanged()
         }
-
-
 
         // for Device found
         val recycleview = findViewById<RecyclerView>(R.id.list_bluetooth)
@@ -81,24 +80,26 @@ class DeviceListActivity : Activity() {
 
             // When discovery finds a device
             if (BluetoothDevice.ACTION_FOUND == action) {
-                // Get the BluetoothDevice object from the Intent
+                // Get the BTDevice object from the Intent
                 val device = intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
                 // If it's already paired, skip it, because it's been listed already
-//                if (device.bondState != BluetoothDevice.BOND_BONDED) {
+//                if (device.bondState != BTDevice.BOND_BONDED) {
 //                    mNewDevicesArrayAdapter.add(device.name + "\n" + device.address)
 //                }
                 // When discovery is finished, change the Activity title
                 Log.d("MA","Name: ${device.name}, Address: ${device.address}, Device Class: ${device.bluetoothClass.majorDeviceClass}")
+                var deviceName = "No name"
+                if(device?.name != null){
+                    deviceName = device.name
+                }
 
-                bluetooths.add(device.address)
+                bluetooths.add(BTDevice(deviceName,device.address,device.bluetoothClass.deviceClass.toString()))
                 recycleAdapter.notifyDataSetChanged()
                 if(device.address.equals("18:3A:2D:D1:C0:71")){
                     Log.d("MA","Found device")
                     val intent = Intent()
                     intent.putExtra(EXTRA_DEVICE_ADDRESS,device.address)
                     setResult(RESULT_OK,intent)
-                    //bluetoothManager.addDevice(device,mHandler)
-                    //bluetoothService.connect(device,mHandler)
                 }
             } else if (BluetoothAdapter.ACTION_DISCOVERY_FINISHED == action) {
                 Log.d("MA","Discovery finished")

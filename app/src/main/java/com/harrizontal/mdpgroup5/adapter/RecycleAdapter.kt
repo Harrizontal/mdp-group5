@@ -10,15 +10,14 @@ import com.harrizontal.mdpgroup5.R
 import kotlinx.android.synthetic.main.list_item_bluetooth.view.*
 import android.app.Activity
 import android.content.Intent
+import com.harrizontal.mdpgroup5.bluetooth.BTDevice
 
 
 class RecycleAdapter(
-    private val listBluetooth: ArrayList<String>,
+    private val listBluetooth: ArrayList<BTDevice>,
     private val context: Context
 ): RecyclerView.Adapter<RecycleAdapter.BluetoothHolder>() {
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecycleAdapter.BluetoothHolder {
-//        val inflatedView = parent.inflate(R.layout.list_item_bluetooth, false)
-//        return BluetoothHolder(inflatedView)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): BluetoothHolder {
         return BluetoothHolder(LayoutInflater.from(context).inflate(R.layout.list_item_bluetooth, parent, false))
     }
 
@@ -26,13 +25,14 @@ class RecycleAdapter(
         return listBluetooth.size
     }
 
-    override fun onBindViewHolder(holder: RecycleAdapter.BluetoothHolder, position: Int) {
-        val address = listBluetooth.get(position)
-        holder.itemView.address.text = address
+    override fun onBindViewHolder(holder: BluetoothHolder, position: Int) {
+        val device = listBluetooth.get(position)
+        holder.itemView.name.text = device.name
+        holder.itemView.address.text = device.address
         holder.itemView.setOnClickListener {
-            Log.d("RA","You clicked on $address")
+            Log.d("RA","You clicked on ${device.address}")
             val intent = Intent()
-            intent.putExtra("device_address",address)
+            intent.putExtra("device_address",device.address)
             (context as Activity).setResult(Activity.RESULT_OK,intent)
             context.finish()
         }
@@ -40,9 +40,7 @@ class RecycleAdapter(
 
 
     class BluetoothHolder(v: View) : RecyclerView.ViewHolder(v){
-        fun bind(address: String){
 
-        }
         companion object {
             //5
             private val PHOTO_KEY = "PHOTO"

@@ -1,43 +1,41 @@
 package com.harrizontal.mdpgroup5.adapter
 
 import android.content.Context
+import android.view.LayoutInflater
 import android.view.View
-import android.widget.TextView
 import android.view.ViewGroup
 import android.widget.BaseAdapter
-import android.view.LayoutInflater
+import android.widget.TextView
 import com.harrizontal.mdpgroup5.R
 
+class GridAxisAdapter(private val mContext: Context, numCoordinates: Int) : BaseAdapter() {
+    private val mItems: IntArray
 
-class GridAdapter(
-    private val context: Context,
-    private val books: ArrayList<String>,
-    private val rows: Int,
-    private val column: Int
-) : BaseAdapter() {
+    init {
+        mItems = IntArray(numCoordinates)
 
-    // 2
-    override fun getCount(): Int {
-        return rows * column
+        for (i in 0 until numCoordinates)
+            mItems[i] = i
     }
 
-    // 3
-    override fun getItemId(position: Int): Long {
+    override fun getCount(): Int {
+        return mItems.size
+    }
+
+    override fun getItem(index: Int): Any {
+        return mItems[index]
+    }
+
+    override fun getItemId(i: Int): Long {
         return 0
     }
 
-    // 4
-    override fun getItem(position: Int): Any? {
-        return null
-    }
-
-    // 5
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
 
         val gridView: View
 
         if(convertView == null){
-            val inflater = context
+            val inflater = mContext
                 .getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
 
 
@@ -50,5 +48,4 @@ class GridAdapter(
 
         return gridView
     }
-
 }

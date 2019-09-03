@@ -1,4 +1,4 @@
-package com.harrizontal.mdpgroup5
+package com.harrizontal.mdpgroup5.constants
 
 import java.util.*
 

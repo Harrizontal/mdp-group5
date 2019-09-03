@@ -25,6 +25,7 @@
         </activity>
 
         <activity android:name=".DeviceListActivity" android:theme="@style/AppTheme"/>
+        <activity android:name=".SelectCoordinateActivity" android:theme="@android:style/Theme.Holo.Dialog"/>
     </application>
 
 </manifest>

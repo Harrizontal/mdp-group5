@@ -1,38 +1,47 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              xmlns:app="http://schemas.android.com/apk/res-auto"
-              xmlns:tools="http://schemas.android.com/tools"
-              android:orientation="vertical"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent">
+<androidx.core.widget.NestedScrollView android:id="@+id/nestedscroll_rehab"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="#FFF"
+        xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools">
 
-    <TextView
-            android:id="@+id/title_paired_devices"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Paired Devices"
-    />
+    <LinearLayout
+                  android:orientation="vertical"
+                  android:layout_width="match_parent"
+                  android:layout_height="match_parent">
 
-    <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/list_paired"
-            android:scrollbars="vertical"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-            tools:listitem="@layout/list_item_bluetooth"/>
+        <TextView
+                android:id="@+id/title_paired_devices"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Paired Devices" />
 
-    <TextView
-            android:id="@+id/title_devices_found"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Devices Found"
-    />
-    <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/list_bluetooth"
-            android:scrollbars="vertical"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-            tools:listitem="@layout/list_item_bluetooth"/>
+        <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/list_paired"
+                android:scrollbars="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:overScrollMode="never"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                tools:listitem="@layout/list_item_bluetooth"/>
 
-</LinearLayout>
+        <TextView
+                android:id="@+id/title_devices_found"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Devices Found"
+        />
+        <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/list_bluetooth"
+                android:scrollbars="vertical"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:overScrollMode="never"
+                app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                tools:listitem="@layout/list_item_bluetooth"/>
+
+    </LinearLayout>
+
+</androidx.core.widget.NestedScrollView>

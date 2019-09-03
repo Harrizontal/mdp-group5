@@ -6,7 +6,6 @@ import android.bluetooth.BluetoothDevice
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.IntentFilter
 import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -17,17 +16,21 @@ import androidx.core.content.ContextCompat
 import kotlinx.android.synthetic.main.activity_main.*
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.app.PendingIntent.getActivity
 import android.os.Message
 import android.view.Menu
-import android.view.MenuInflater
 import android.view.MenuItem
+import android.widget.GridView
+import android.widget.TextView
+import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.harrizontal.mdpgroup5.adapter.*
 import com.harrizontal.mdpgroup5.bluetooth.BluetoothConnectionService
 import com.harrizontal.mdpgroup5.bluetooth.BluetoothManager
+import com.harrizontal.mdpgroup5.constants.BluetoothConstants
+import com.harrizontal.mdpgroup5.constants.MDPConstants
+import com.harrizontal.mdpgroup5.helper.Utils
 import java.nio.charset.Charset
-import android.widget.GridView
-import com.harrizontal.mdpgroup5.adapter.GridAdapter
-
 
 class MainActivity : AppCompatActivity() {
 
@@ -37,17 +40,49 @@ class MainActivity : AppCompatActivity() {
     private lateinit var bluetoothService: BluetoothConnectionService
     private lateinit var mReceiver: BroadcastReceiver
 
-    private val REQUEST_BLUETOOTH_CONNECTION = 1
+    val REQUEST_BLUETOOTH_CONNECTION = 1
+    val REQUEST_COORDINATE = 2
 
     private val books: ArrayList<String> = ArrayList()
+    private val testStrings: ArrayList<String> = ArrayList()
+    private var mMapDescriptor: ArrayList<Char> = ArrayList()
+
+    private lateinit var mazeAdapter: MazeAdapter
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-//        val gridView = findViewById<GridView>(R.id.grid_maze)
-//        val booksAdapter = GridAdapter(this, books,20,15)
-//        gridView.adapter = booksAdapter
+        testStrings.add("Test")
+        testStrings.add("Test")
+
+        mMapDescriptor = Utils().getMapDescriptor(MDPConstants.DEFAULT_MAP_DESCRIPTOR_STRING)
+
+        Log.d("MainActivity","Size of Descriptor: ${mMapDescriptor!!.size}")
+
+        // yAxis
+        val yAxisGridView = findViewById<RecyclerView>(R.id.yAxis)
+        val ylayoutManager = GridLayoutManager(this,1)
+        //val yAxisAdapter = MazeAxisAdapter(this,MDPConstants.NUM_ROWS,1)
+        val yAxisAdapter = MazeAxisAdapter(20,this)
+        yAxisGridView.layoutManager = ylayoutManager
+        yAxisGridView.adapter = yAxisAdapter
+
+        // xAxis
+        val xAxisGridView = findViewById<RecyclerView>(R.id.xAxis)
+        val xlayoutManager = GridLayoutManager(this,MDPConstants.NUM_COLUMN)
+        val xAxisAdapter = MazeAxisAdapter(15,this)
+        xAxisGridView.layoutManager = xlayoutManager
+        xAxisGridView.adapter = xAxisAdapter
+
+
+
+        val recycleViewMaze = findViewById<RecyclerView>(R.id.recyclerview_maze)
+        val gridLayoutManager = GridLayoutManager(this,MDPConstants.NUM_COLUMN)
+        mazeAdapter = MazeAdapter(this,300,mMapDescriptor)
+        recycleViewMaze.layoutManager = gridLayoutManager
+        recycleViewMaze.adapter = mazeAdapter
 
         initDiscoverBluetooth()
     }
@@ -107,24 +142,10 @@ class MainActivity : AppCompatActivity() {
         }
 
 
-
-//        val filter = IntentFilter()
-//        filter.addAction(BluetoothDevice.ACTION_FOUND)
-//        filter.addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
-//        registerReceiver(mReceiver, filter)
-
-        //bluetoothAdapter.startDiscovery()
-
-
-        button1.setOnClickListener {
-            Log.d("MA","Start Discovering")
-            bluetoothAdapter.startDiscovery()
-        }
-
         button2.setOnClickListener {
             Log.d("MA","Sending data!")
             //bluetoothManager.sendMessage("Hello")
-            val message = "r"
+            val message = MDPConstants.DEFAULT_MAP_DESCRIPTOR_STRING
             val bytes = message.toByteArray(Charset.defaultCharset())
             bluetoothService.write(bytes)
         }
@@ -135,11 +156,6 @@ class MainActivity : AppCompatActivity() {
             bluetoothService.stop()
         }
 
-        button4.setOnClickListener {
-            Log.d("MA","Connect device")
-            //bluetoothManager.connect()
-
-        }
 
     }
 
@@ -171,8 +187,12 @@ class MainActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
         return when (item!!.itemId) {
             R.id.secure_connect_scan -> {
-                val serverIntent = Intent(this, DeviceListActivity::class.java)
-                startActivityForResult(serverIntent, REQUEST_BLUETOOTH_CONNECTION)
+                if(bluetoothService.getState() == BluetoothConstants.STATE_CONNECTED){
+                    // if device is already connected, show dialogbox to disconnect
+                }else{
+                    val serverIntent = Intent(this, DeviceListActivity::class.java)
+                    startActivityForResult(serverIntent, REQUEST_BLUETOOTH_CONNECTION)
+                }
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -208,6 +228,11 @@ class MainActivity : AppCompatActivity() {
                     // construct a string from the valid bytes in the buffer
                     val readMessage = String(readBuf, 0, msg.arg1)
                     Log.d("MA","Message recieved: $readMessage")
+                    mMapDescriptor = Utils().getMapDescriptor(readMessage)
+                    mazeAdapter.updateMap(mMapDescriptor) // update maps when receive data from raspberry pi
+
+                    val textMessageReceived = findViewById<TextView>(R.id.text_message_received)
+                    textMessageReceived.text = readMessage
 
                 }
                 BluetoothConstants.MESSAGE_WRITE -> {
@@ -220,7 +245,6 @@ class MainActivity : AppCompatActivity() {
 
                 }
             }
-
         }
     }
 
@@ -231,6 +255,12 @@ class MainActivity : AppCompatActivity() {
                     val address = data?.extras?.getString("device_address")
                     Log.d("MA","requestCode: $requestCode, resultCode: $resultCode, data: $data, device_address: $address")
                     bluetoothService.connect(bluetoothAdapter.getRemoteDevice(address),mHandler)
+                }
+            }
+            REQUEST_COORDINATE -> {
+                if(resultCode == Activity.RESULT_OK){
+                    val xCord = data?.extras?.getString("X")
+                    Log.d("MA","requestCode: $requestCode, resultCode: $resultCode, xCord: $xCord")
                 }
             }
         }

@@ -7,8 +7,8 @@ import android.bluetooth.BluetoothSocket
 import android.os.Bundle
 import android.os.Handler
 import android.util.Log
-import com.harrizontal.mdpgroup5.BluetoothConstants
-import com.harrizontal.mdpgroup5.BluetoothConstants.Companion.MESSAGE_READ
+import com.harrizontal.mdpgroup5.constants.BluetoothConstants
+import com.harrizontal.mdpgroup5.constants.BluetoothConstants.Companion.MESSAGE_READ
 import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
@@ -222,6 +222,7 @@ class BluetoothConnectionService internal constructor(mHandler: Handler){
                 mmSocket!!.connect()
             } catch (connectException: IOException) {
                 // Unable to connect; close the socket and get out
+                setState(BluetoothConstants.STATE_ERROR)
                 Log.e("ConnectThread","connectException error: "+connectException)
                 try {
                     mmSocket!!.close()
