@@ -13,8 +13,9 @@ import com.harrizontal.mdpgroup5.bluetooth.BTDevice
 import kotlinx.android.synthetic.main.activity_main.view.*
 
 class MazeAxisAdapter(
+    private val context: Context,
     private val noOfGrid: Int,
-    private val context: Context
+    private val coordinateType: Int
 ): RecyclerView.Adapter<MazeAxisAdapter.MazeHolder>() {
     private val mItems: IntArray
 
@@ -35,7 +36,13 @@ class MazeAxisAdapter(
 
     override fun onBindViewHolder(holder: MazeHolder, position: Int) {
         val device = mItems.get(position)
-        holder.itemView.textView.text = device.toString()
+        if(coordinateType == 1){
+            // flip the numbers for Y coordinates
+            holder.itemView.textView.text = (noOfGrid - 1 - device).toString()
+        }else{
+            holder.itemView.textView.text = device.toString()
+        }
+
     }
 
 

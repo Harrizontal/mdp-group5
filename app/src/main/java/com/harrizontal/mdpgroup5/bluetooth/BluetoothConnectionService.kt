@@ -26,8 +26,9 @@ class BluetoothConnectionService internal constructor(mHandler: Handler){
     private var connectThread: ConnectThread? = null
     private var connectedThread: ConnectedThread? = null
     private var acceptThread: AcceptThread? = null
-
     private var retryCount = 1
+
+    var hardDisconnect = false
 
     init {
         mState = BluetoothConstants.STATE_NONE
@@ -69,6 +70,10 @@ class BluetoothConnectionService internal constructor(mHandler: Handler){
         cancelConnectThread()
         cancelConnectedThread()
         setState(BluetoothConstants.STATE_NONE)
+
+        if(!hardDisconnect){
+            hardDisconnect = false
+        }
     }
 
     @Synchronized
@@ -115,16 +120,27 @@ class BluetoothConnectionService internal constructor(mHandler: Handler){
     /**
      * Connection Lost occurs when
      */
-    private fun connectionLost() {
-        Log.e("BCS","Connection Failed")
-        if(acceptThread != null){
-            acceptThread!!.cancel()
-            acceptThread = null
+//    private fun connectionLost() {
+//        Log.e("BCS","Connection Failed")
+//        if(acceptThread != null){
+//            acceptThread!!.cancel()
+//            acceptThread = null
+//        }
+//
+//        this.start()
+//    }
+
+    private fun reconnect(socket: BluetoothSocket){
+        if (connectedThread != null) {
+            connectedThread!!.toStop()
+            connectedThread!!.cancel()
+
+            connectedThread = null
         }
 
-        this.start()
+        connectThread = ConnectThread(socket.remoteDevice)
+        connectThread!!.start()
     }
-
 
     private fun cancelConnectThread() {
         if (connectThread != null) {
@@ -142,14 +158,13 @@ class BluetoothConnectionService internal constructor(mHandler: Handler){
         }
     }
 
-
     private inner class AcceptThread() : Thread(){
         private val mmServerSocket: BluetoothServerSocket?
 
         init {
             var tmp: BluetoothServerSocket? = null
             try {
-                tmp = mAdapter.listenUsingRfcommWithServiceRecord("MDPGroup5",
+                tmp = mAdapter.listenUsingInsecureRfcommWithServiceRecord("MDPGroup5",
                     BluetoothConstants.myUUID
                 )
             } catch (e: IOException) {
@@ -239,6 +254,11 @@ class BluetoothConnectionService internal constructor(mHandler: Handler){
             }
 
             connected(mmSocket, mmDevice)
+
+            if(acceptThread != null){
+                acceptThread!!.cancel()
+                acceptThread = null
+            }
         }
 
         /**
@@ -294,7 +314,11 @@ class BluetoothConnectionService internal constructor(mHandler: Handler){
                 } catch (e: IOException) {
                     Log.e(TAG, "Input stream was disconnected", e)
                     setState(BluetoothConstants.STATE_NONE)
-                    connectionLost()
+
+                    if(!hardDisconnect){
+                        reconnect(mmSocket)
+                    }
+                    //connectionLost()
                     break
                 }
 
@@ -315,8 +339,8 @@ class BluetoothConnectionService internal constructor(mHandler: Handler){
             } catch (e: IOException) {
                 Log.e(TAG, "Exception during write", e)
             }
-
         }
+
 
         /* Call this from the main activity to shutdown the connection */
 

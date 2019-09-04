@@ -19,14 +19,13 @@ import android.app.Activity
 import android.os.Message
 import android.view.Menu
 import android.view.MenuItem
-import android.widget.GridView
 import android.widget.TextView
 import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.harrizontal.mdpgroup5.adapter.*
 import com.harrizontal.mdpgroup5.bluetooth.BluetoothConnectionService
 import com.harrizontal.mdpgroup5.bluetooth.BluetoothManager
+import com.harrizontal.mdpgroup5.constants.ActivityConstants
 import com.harrizontal.mdpgroup5.constants.BluetoothConstants
 import com.harrizontal.mdpgroup5.constants.MDPConstants
 import com.harrizontal.mdpgroup5.helper.Utils
@@ -40,11 +39,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var bluetoothService: BluetoothConnectionService
     private lateinit var mReceiver: BroadcastReceiver
 
-    val REQUEST_BLUETOOTH_CONNECTION = 1
-    val REQUEST_COORDINATE = 2
-
-    private val books: ArrayList<String> = ArrayList()
-    private val testStrings: ArrayList<String> = ArrayList()
     private var mMapDescriptor: ArrayList<Char> = ArrayList()
 
     private lateinit var mazeAdapter: MazeAdapter
@@ -54,8 +48,6 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        testStrings.add("Test")
-        testStrings.add("Test")
 
         mMapDescriptor = Utils().getMapDescriptor(MDPConstants.DEFAULT_MAP_DESCRIPTOR_STRING)
 
@@ -64,23 +56,22 @@ class MainActivity : AppCompatActivity() {
         // yAxis
         val yAxisGridView = findViewById<RecyclerView>(R.id.yAxis)
         val ylayoutManager = GridLayoutManager(this,1)
-        //val yAxisAdapter = MazeAxisAdapter(this,MDPConstants.NUM_ROWS,1)
-        val yAxisAdapter = MazeAxisAdapter(20,this)
+        val yAxisAdapter = MazeAxisAdapter(this,MDPConstants.NUM_ROWS,1)
         yAxisGridView.layoutManager = ylayoutManager
         yAxisGridView.adapter = yAxisAdapter
 
         // xAxis
         val xAxisGridView = findViewById<RecyclerView>(R.id.xAxis)
-        val xlayoutManager = GridLayoutManager(this,MDPConstants.NUM_COLUMN)
-        val xAxisAdapter = MazeAxisAdapter(15,this)
+        val xlayoutManager = GridLayoutManager(this,MDPConstants.NUM_COLUMNS)
+        val xAxisAdapter = MazeAxisAdapter(this,MDPConstants.NUM_COLUMNS,0)
         xAxisGridView.layoutManager = xlayoutManager
         xAxisGridView.adapter = xAxisAdapter
 
 
 
         val recycleViewMaze = findViewById<RecyclerView>(R.id.recyclerview_maze)
-        val gridLayoutManager = GridLayoutManager(this,MDPConstants.NUM_COLUMN)
-        mazeAdapter = MazeAdapter(this,300,mMapDescriptor)
+        val gridLayoutManager = GridLayoutManager(this,MDPConstants.NUM_COLUMNS)
+        mazeAdapter = MazeAdapter(this,MDPConstants.NUM_ROWS,MDPConstants.NUM_COLUMNS,mMapDescriptor)
         recycleViewMaze.layoutManager = gridLayoutManager
         recycleViewMaze.adapter = mazeAdapter
 
@@ -153,7 +144,7 @@ class MainActivity : AppCompatActivity() {
         button3.setOnClickListener {
             Log.d("MA","Disconnect")
             //bluetoothManager.stopConnection()
-            bluetoothService.stop()
+
         }
 
 
@@ -189,9 +180,11 @@ class MainActivity : AppCompatActivity() {
             R.id.secure_connect_scan -> {
                 if(bluetoothService.getState() == BluetoothConstants.STATE_CONNECTED){
                     // if device is already connected, show dialogbox to disconnect
+                    val intent = Intent(this,DisconnectBluetoothActivity::class.java)
+                    startActivityForResult(intent, ActivityConstants.REQUEST_BLUETOOTH_DISCONNECT)
                 }else{
-                    val serverIntent = Intent(this, DeviceListActivity::class.java)
-                    startActivityForResult(serverIntent, REQUEST_BLUETOOTH_CONNECTION)
+                    val intent = Intent(this, DeviceListActivity::class.java)
+                    startActivityForResult(intent, ActivityConstants.REQUEST_BLUETOOTH_CONNECTION)
                 }
                 true
             }
@@ -250,17 +243,26 @@ class MainActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         when(requestCode){
-            REQUEST_BLUETOOTH_CONNECTION -> {
+            ActivityConstants.REQUEST_BLUETOOTH_CONNECTION -> {
                 if(resultCode == Activity.RESULT_OK){
                     val address = data?.extras?.getString("device_address")
                     Log.d("MA","requestCode: $requestCode, resultCode: $resultCode, data: $data, device_address: $address")
                     bluetoothService.connect(bluetoothAdapter.getRemoteDevice(address),mHandler)
                 }
             }
-            REQUEST_COORDINATE -> {
+            ActivityConstants.REQUEST_COORDINATE -> {
                 if(resultCode == Activity.RESULT_OK){
                     val xCord = data?.extras?.getString("X")
                     Log.d("MA","requestCode: $requestCode, resultCode: $resultCode, xCord: $xCord")
+                }
+            }
+            ActivityConstants.REQUEST_BLUETOOTH_DISCONNECT -> {
+                Log.d("MA","Request bluetooth disconnect")
+                if(resultCode == Activity.RESULT_OK){
+                    Log.d("MA","disconnecting")
+                    bluetoothService.hardDisconnect = true
+                    bluetoothService.stop()
+
                 }
             }
         }

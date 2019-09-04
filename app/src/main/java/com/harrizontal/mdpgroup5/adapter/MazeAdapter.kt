@@ -17,15 +17,16 @@ import kotlinx.android.synthetic.main.activity_main.view.*
 
 class MazeAdapter(
     private val context: Context,
-    private val noOfGrid: Int,
+    private val rows: Int,
+    private val columns: Int,
     private var mapDescriptor: ArrayList<Char>
 ): RecyclerView.Adapter<MazeAdapter.MazeHolder>() {
     private val mItems: IntArray
 
     init {
-        mItems = IntArray(noOfGrid)
+        mItems = IntArray(rows*columns)
 
-        for (i in 0 until noOfGrid)
+        for (i in 0 until (rows*columns))
             mItems[i] = i
     }
 
@@ -34,15 +35,19 @@ class MazeAdapter(
     }
 
     override fun getItemCount(): Int {
-        return mapDescriptor.size
+        return rows*columns
     }
 
     override fun onBindViewHolder(holder: MazeHolder, position: Int) {
-        val blockType = mapDescriptor[position].toString()
-        var replaceBackground: Drawable
+        var blockType: Char?  = mapDescriptor.getOrNull(position)
+        if(blockType == null) {blockType = '0'}
 
+        val xCoord = position % columns
+        val yCoord = (rows - 1 - (position / columns))
+
+        Log.d("MazeAdapter","Update block to $blockType. mapDescriptor.size: ${mapDescriptor.size}")
         // update background based on type of block
-        when(blockType){
+        when(blockType.toString()){
             MDPConstants.UNEXPLORED -> {
                 holder.itemView.setBackgroundResource(R.drawable.cell_item_unexplored)
             }
@@ -61,7 +66,7 @@ class MazeAdapter(
         }
 
         val device = mItems.get(position)
-        holder.itemView.textView.text = mapDescriptor[position].toString()
+        holder.itemView.textView.text = xCoord.toString() + "," + yCoord.toString()
 
 
         holder.itemView.setOnClickListener {
@@ -85,6 +90,7 @@ class MazeAdapter(
     }
 
     fun updateMap(mMapDescriptor: ArrayList<Char>){
+        Log.d("MazeAdapter","Uploading map with ${mMapDescriptor.size} characters")
         mapDescriptor.clear()
         mapDescriptor.addAll(mMapDescriptor)
         notifyDataSetChanged()
