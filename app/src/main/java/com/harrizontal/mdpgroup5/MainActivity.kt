@@ -3,9 +3,6 @@ package com.harrizontal.mdpgroup5
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
-import android.content.BroadcastReceiver
-import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
@@ -16,10 +13,16 @@ import androidx.core.content.ContextCompat
 import kotlinx.android.synthetic.main.activity_main.*
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.AlertDialog
+import android.content.*
+import android.os.IBinder
 import android.os.Message
 import android.view.Menu
 import android.view.MenuItem
+import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.harrizontal.mdpgroup5.adapter.*
@@ -29,7 +32,7 @@ import com.harrizontal.mdpgroup5.constants.ActivityConstants
 import com.harrizontal.mdpgroup5.constants.BluetoothConstants
 import com.harrizontal.mdpgroup5.constants.MDPConstants
 import com.harrizontal.mdpgroup5.helper.Utils
-import java.nio.charset.Charset
+import com.harrizontal.mdpgroup5.service.BService
 
 class MainActivity : AppCompatActivity() {
 
@@ -37,11 +40,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var bluetoothAdapter: BluetoothAdapter
     private lateinit var bluetoothManager: BluetoothManager
     private lateinit var bluetoothService: BluetoothConnectionService
-    private lateinit var mReceiver: BroadcastReceiver
 
     private var mMapDescriptor: ArrayList<Char> = ArrayList()
 
     private lateinit var mazeAdapter: MazeAdapter
+
+    var myService: BService? = null
+    var isBound = false
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -49,9 +54,17 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
 
+        Log.d("MA", "StartBTConnection: Starting Bluetooth Connection Service!")
+
+        LocalBroadcastManager.getInstance(this)
+            .registerReceiver(bluetoothConnectionReceiver, IntentFilter("bluetoothConnectionStatus"))
+
+        LocalBroadcastManager.getInstance(this)
+            .registerReceiver(bluetoothIncomingMessage, IntentFilter("bluetoothIncomingMessage"))
+
         mMapDescriptor = Utils().getMapDescriptor(MDPConstants.DEFAULT_MAP_DESCRIPTOR_STRING)
 
-        Log.d("MainActivity","Size of Descriptor: ${mMapDescriptor!!.size}")
+        Log.d("MA","Size of Descriptor: ${mMapDescriptor!!.size}")
 
         // yAxis
         val yAxisGridView = findViewById<RecyclerView>(R.id.yAxis)
@@ -68,28 +81,102 @@ class MainActivity : AppCompatActivity() {
         xAxisGridView.adapter = xAxisAdapter
 
 
-
+        // maze
         val recycleViewMaze = findViewById<RecyclerView>(R.id.recyclerview_maze)
         val gridLayoutManager = GridLayoutManager(this,MDPConstants.NUM_COLUMNS)
         mazeAdapter = MazeAdapter(this,MDPConstants.NUM_ROWS,MDPConstants.NUM_COLUMNS,mMapDescriptor)
         recycleViewMaze.layoutManager = gridLayoutManager
         recycleViewMaze.adapter = mazeAdapter
 
+
+
+        button_test.setOnClickListener {
+            sendMessageToBluetooth(MDPConstants.DEFAULT_MAP_DESCRIPTOR_STRING)
+        }
+
+        button_turnleft.setOnClickListener {
+            sendMessageToBluetooth("algorithm:turnleft")
+        }
+
+        button_turnRight.setOnClickListener {
+            sendMessageToBluetooth("algorithm:turnRight")
+        }
+
+        button_up.setOnClickListener {
+            sendMessageToBluetooth("algorithm:up")
+        }
+
+        button_exploration.setOnClickListener {
+            sendMessageToBluetooth("algorithm:exploration")
+        }
+
+        button_fastest_path.setOnClickListener {
+            sendMessageToBluetooth("algorithm:fastestpath")
+        }
+
         initDiscoverBluetooth()
     }
+
+    private var bluetoothConnectionReceiver:BroadcastReceiver = object: BroadcastReceiver() {
+        override fun onReceive(context:Context, intent:Intent) {
+            val connectionStatus = intent.getIntExtra("ConnectionStatus",99)
+            Log.d("MainActivity","Received status :${connectionStatus}")
+
+            Toast.makeText(context, "Connection status: $connectionStatus", Toast.LENGTH_SHORT).show()
+
+            when(connectionStatus){
+                BluetoothConstants.STATE_LISTEN -> {
+                    textView.text = "Listening for incoming connection"
+                }
+                BluetoothConstants.STATE_CONNECTED -> {
+                    textView.text = "Connected"
+                }
+                BluetoothConstants.STATE_CONNECTING -> {
+                    textView.text = "Connecting"
+                }
+                BluetoothConstants.STATE_NONE -> {
+                    textView.text = "Not connected"
+                    unBindService()
+                }
+                BluetoothConstants.STATE_ERROR -> {
+                    textView.text = "Something went wrong"
+                }
+            }
+        }
+    }
+
+    private var bluetoothIncomingMessage: BroadcastReceiver = object: BroadcastReceiver(){
+        override fun onReceive(context: Context?, intent: Intent?) {
+            val message = intent!!.getStringExtra("IncomingMessage")
+            Log.d("MainActivity","Received some message :${message}")
+
+            mMapDescriptor = Utils().getMapDescriptor(message)
+            mazeAdapter.updateMap(mMapDescriptor) // update maps when receive data from raspberry pi
+
+            val textMessageReceived = findViewById<TextView>(R.id.text_message_received)
+            textMessageReceived.text = message
+        }
+    }
+
+    private val myConnection = object : ServiceConnection {
+        override fun onServiceConnected(className: ComponentName,
+                                        service: IBinder
+        ) {
+            val binder = service as BService.MyLocalBinder
+            myService = binder.getService()
+            isBound = true
+        }
+
+        override fun onServiceDisconnected(name: ComponentName) {
+            isBound = false
+
+        }
+    }
+
 
 
     private fun initDiscoverBluetooth(){
         bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-        bluetoothManager = BluetoothManager.instance
-
-
-        val pairedDevices = bluetoothAdapter.getBondedDevices()
-
-        pairedDevices.map {
-            Log.d("MA","Bonded devices name: "+it.name +  ", mac address: " + it.address)
-        }
-
 
         // check permission needed for the phone's bluetooth to start detecting
         if (ContextCompat.checkSelfPermission(
@@ -104,70 +191,51 @@ class MainActivity : AppCompatActivity() {
         }
 
 
-        bluetoothService = BluetoothConnectionService(mHandler).apply {
-            start()
+        // obsolete code
+//        bluetoothService = BluetoothConnectionService(mHandler).apply {
+//            start()
+//        }
+
+    }
+
+    /**
+     * Sends message to bluetooth service
+     * returns a toast if is not binded to bluetooth service
+     */
+    private fun sendMessageToBluetooth(message: String){
+        Log.d("MA","Sending data!")
+        if(isBound){
+            //myService?.sendMessage(MDPConstants.DEFAULT_MAP_DESCRIPTOR_STRING)
+            myService?.sendMessage(message)
+        }else{
+            Toast.makeText(applicationContext, "Cant send message. No bluetooth connected", Toast.LENGTH_SHORT).show()
         }
-
-        mReceiver = object : BroadcastReceiver() {
-
-            override fun onReceive(context: Context, intent: Intent) {
-                val action: String = intent.action!!
-                when (action) {
-                    BluetoothDevice.ACTION_FOUND -> {
-                        //Log.d("EPF","ACTION_FOUND")
-                        val device = intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)
-                        Log.d("MA","Name: ${device.name}, Address: ${device.address}, Device Class: ${device.bluetoothClass.majorDeviceClass}")
-
-                        if(device.address.equals("18:3A:2D:D1:C0:71")){
-                            Log.d("MA","Found device")
-                            //bluetoothManager.addDevice(device,mHandler)
-                            //bluetoothService.connect(device,mHandler)
-                        }
-                    }
-                    BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
-                        Log.d("MA","Discovery finished")
-                        //bluetoothAdapter.startDiscovery() // enable scan again
-                    }
-                }
-            }
-        }
-
-
-        button2.setOnClickListener {
-            Log.d("MA","Sending data!")
-            //bluetoothManager.sendMessage("Hello")
-            val message = MDPConstants.DEFAULT_MAP_DESCRIPTOR_STRING
-            val bytes = message.toByteArray(Charset.defaultCharset())
-            bluetoothService.write(bytes)
-        }
-
-        button3.setOnClickListener {
-            Log.d("MA","Disconnect")
-            //bluetoothManager.stopConnection()
-
-        }
-
-
     }
 
     override fun onDestroy() {
         Log.d("MA","onDestory")
         super.onDestroy()
-        if(bluetoothService != null){
-            bluetoothService.stop()
-        }
+        unBindService()
+
     }
 
     override fun onResume() {
         Log.d("MA","onResume")
         super.onResume()
-        if(bluetoothService != null){
-            if(bluetoothService.getState() == BluetoothConstants.STATE_NONE){
-                bluetoothService.start()
-            }
+    }
+
+    // unbind this activity from service
+    private fun unBindService(){
+        if (isBound) {
+            Log.d("MA","Unbinding service")
+            unbindService(myConnection)
+            isBound = false
         }
     }
 
+
+
+    // inflate the menu item in action bar
     override fun onCreateOptionsMenu(menu: Menu?): Boolean {
         super.onCreateOptionsMenu(menu)
         val inflater = menuInflater
@@ -175,94 +243,70 @@ class MainActivity : AppCompatActivity() {
         return true
     }
 
+    // menu clicks
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
         return when (item!!.itemId) {
             R.id.secure_connect_scan -> {
-                if(bluetoothService.getState() == BluetoothConstants.STATE_CONNECTED){
-                    // if device is already connected, show dialogbox to disconnect
-                    val intent = Intent(this,DisconnectBluetoothActivity::class.java)
-                    startActivityForResult(intent, ActivityConstants.REQUEST_BLUETOOTH_DISCONNECT)
+                if(isBound){
+                    if(myService?.getState() == BluetoothConstants.STATE_CONNECTED){
+                        val intent = Intent(this,DisconnectBluetoothActivity::class.java)
+                        startActivityForResult(intent, ActivityConstants.REQUEST_BLUETOOTH_DISCONNECT)
+                    }else{
+                        val intent = Intent(this, DeviceListActivity::class.java)
+                        startActivityForResult(intent, ActivityConstants.REQUEST_BLUETOOTH_CONNECTION)
+                    }
                 }else{
+                    // no bluetooth service binded to this activity, hence there is no bluetooth connection.
+                    // opens a new activity and display the list of bluetooth macaddress to connect.
                     val intent = Intent(this, DeviceListActivity::class.java)
                     startActivityForResult(intent, ActivityConstants.REQUEST_BLUETOOTH_CONNECTION)
                 }
+                true
+            }
+            R.id.settings -> {
+                val intent = Intent(this, SettingsActivity::class.java)
+                startActivityForResult(intent, ActivityConstants.REQUEST_BLUETOOTH_CONNECTION)
                 true
             }
             else -> super.onOptionsItemSelected(item)
         }
     }
 
-    private val mHandler = @SuppressLint("HandlerLeak")
-    object : Handler() {
-        override fun handleMessage(msg: Message) {
-            Log.d("MA","Msg: ${msg.what} Data: ${msg.arg1}")
-            when(msg.what){
-                BluetoothConstants.MESSAGE_STATE_CHANGE -> {
-                    when(msg.arg1){
-                        BluetoothConstants.STATE_LISTEN -> {
-                            textView.text = "Listening for incoming connection"
-                        }
-                        BluetoothConstants.STATE_CONNECTED -> {
-                            textView.text = "Connected"
-                        }
-                        BluetoothConstants.STATE_CONNECTING -> {
-                            textView.text = "Connecting"
-                        }
-                        BluetoothConstants.STATE_NONE -> {
-                            textView.text = "Not connected"
-                        }
-                        BluetoothConstants.STATE_ERROR -> {
-                            textView.text = "Something went wrong"
-                        }
-                    }
-                }
-                BluetoothConstants.MESSAGE_READ -> {
-                    val readBuf = msg.obj as ByteArray
-                    // construct a string from the valid bytes in the buffer
-                    val readMessage = String(readBuf, 0, msg.arg1)
-                    Log.d("MA","Message recieved: $readMessage")
-                    mMapDescriptor = Utils().getMapDescriptor(readMessage)
-                    mazeAdapter.updateMap(mMapDescriptor) // update maps when receive data from raspberry pi
-
-                    val textMessageReceived = findViewById<TextView>(R.id.text_message_received)
-                    textMessageReceived.text = readMessage
-
-                }
-                BluetoothConstants.MESSAGE_WRITE -> {
-                    val readBuf = msg.obj as ByteArray
-                    // construct a string from the valid bytes in the buffer
-                    val test = String(readBuf)
-                    Log.d("MA","Message sent: ${test}")
-                }
-                BluetoothConstants.MESSAGE_SNACKBAR -> {
-
-                }
-            }
-        }
-    }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         when(requestCode){
+            // happens when user taps on a bluetooth macaddress
             ActivityConstants.REQUEST_BLUETOOTH_CONNECTION -> {
                 if(resultCode == Activity.RESULT_OK){
                     val address = data?.extras?.getString("device_address")
                     Log.d("MA","requestCode: $requestCode, resultCode: $resultCode, data: $data, device_address: $address")
-                    bluetoothService.connect(bluetoothAdapter.getRemoteDevice(address),mHandler)
+                    //bluetoothService.connect(bluetoothAdapter.getRemoteDevice(address),mHandler)
+
+                    val intent = Intent(this, BService::class.java)
+                    intent.putExtra("serviceType", "connect")
+                    intent.putExtra("device",bluetoothAdapter.getRemoteDevice(address))
+                    startService(intent)
+
+                    // bind service
+                    val intent2 = Intent(this, BService::class.java)
+                    bindService(intent2, myConnection, Context.BIND_AUTO_CREATE)
                 }
             }
+            // happens when user taps on grid in the 2d arena
             ActivityConstants.REQUEST_COORDINATE -> {
                 if(resultCode == Activity.RESULT_OK){
                     val xCord = data?.extras?.getString("X")
                     Log.d("MA","requestCode: $requestCode, resultCode: $resultCode, xCord: $xCord")
                 }
             }
+            // happens when user wants to disconnect bluetooth
             ActivityConstants.REQUEST_BLUETOOTH_DISCONNECT -> {
                 Log.d("MA","Request bluetooth disconnect")
                 if(resultCode == Activity.RESULT_OK){
-                    Log.d("MA","disconnecting")
-                    bluetoothService.hardDisconnect = true
-                    bluetoothService.stop()
-
+                    if(isBound){
+                        myService?.stop() // stop bluetooth connection
+                        unBindService() // unbind service from this activity
+                    }
                 }
             }
         }

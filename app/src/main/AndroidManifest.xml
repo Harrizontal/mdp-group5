@@ -27,6 +27,7 @@
         <activity android:name=".DeviceListActivity" android:theme="@style/AppTheme"/>
         <activity android:name=".DisconnectBluetoothActivity" android:theme="@style/AppTheme"/>
         <activity android:name=".SelectCoordinateActivity" android:theme="@style/AppTheme"/>
+        <activity android:name=".SettingsActivity" android:theme="@style/AppTheme"/>
 
         <service android:name=".service.BService" />
 

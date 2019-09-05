@@ -4,14 +4,8 @@
         android:layout_height="match_parent">
 
     <TextView
+            android:id="@+id/textview_Hello"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Disconnect bluetooth? Well you only got one choice for now."
-        />
-    <Button
-            android:id="@+id/button_disconnect"
-            android:text="Yes"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-
+            android:text="Hello"/>
 </LinearLayout>
