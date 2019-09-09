@@ -1,16 +1,13 @@
 package com.harrizontal.mdpgroup5.adapter
 
-import android.app.Activity
+
 import android.content.Context
-import android.content.Intent
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.harrizontal.mdpgroup5.R
-import com.harrizontal.mdpgroup5.bluetooth.BTDevice
-import kotlinx.android.synthetic.main.activity_main.view.*
+import kotlinx.android.synthetic.main.list_item_axis_indicator.view.*
 
 class MazeAxisAdapter(
     private val context: Context,

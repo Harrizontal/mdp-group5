@@ -19,10 +19,10 @@ import android.os.IBinder
 import android.os.Message
 import android.view.Menu
 import android.view.MenuItem
+import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.harrizontal.mdpgroup5.adapter.*
@@ -31,6 +31,9 @@ import com.harrizontal.mdpgroup5.bluetooth.BluetoothManager
 import com.harrizontal.mdpgroup5.constants.ActivityConstants
 import com.harrizontal.mdpgroup5.constants.BluetoothConstants
 import com.harrizontal.mdpgroup5.constants.MDPConstants
+import com.harrizontal.mdpgroup5.constants.SharedPreferenceConstants
+import com.harrizontal.mdpgroup5.constants.SharedPreferenceConstants.Companion.DEFAULT_VALUE_MAP_UPDATE
+import com.harrizontal.mdpgroup5.constants.SharedPreferenceConstants.Companion.SHARED_PREF_MAP_UPDATE
 import com.harrizontal.mdpgroup5.helper.Utils
 import com.harrizontal.mdpgroup5.service.BService
 
@@ -53,14 +56,10 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        supportActionBar?.setSubtitle("Not connected")
 
-        Log.d("MA", "StartBTConnection: Starting Bluetooth Connection Service!")
-
-        LocalBroadcastManager.getInstance(this)
-            .registerReceiver(bluetoothConnectionReceiver, IntentFilter("bluetoothConnectionStatus"))
-
-        LocalBroadcastManager.getInstance(this)
-            .registerReceiver(bluetoothIncomingMessage, IntentFilter("bluetoothIncomingMessage"))
+        registerReceiver(bluetoothConnectionReceiver, IntentFilter("bluetoothConnectionStatus"))
+        registerReceiver(bluetoothIncomingMessage,IntentFilter("bluetoothIncomingMessage"))
 
         mMapDescriptor = Utils().getMapDescriptor(MDPConstants.DEFAULT_MAP_DESCRIPTOR_STRING)
 
@@ -114,8 +113,35 @@ class MainActivity : AppCompatActivity() {
             sendMessageToBluetooth("algorithm:fastestpath")
         }
 
+        initializeUpdateMap()
+
         initDiscoverBluetooth()
     }
+
+    /**
+     * Update Map button will only apply if Update Map switch at Settings page is checked
+     */
+    private fun initializeUpdateMap(){
+        val sharedPref: SharedPreferences = getSharedPreferences(SharedPreferenceConstants.SHARED_PREF_MDP, Context.MODE_PRIVATE)
+        val sharedPrefMapUpdate = sharedPref.getBoolean(
+            SHARED_PREF_MAP_UPDATE,
+            DEFAULT_VALUE_MAP_UPDATE
+        )
+        // if map update is false, display button to update manaully
+        if(!sharedPrefMapUpdate){
+            button_update_map.apply{
+                visibility = View.VISIBLE
+                setOnClickListener {
+                    Log.d("MainActivity","Update Map")
+                }
+            }
+        }else{
+            button_update_map.apply {
+                visibility = View.GONE
+            }
+        }
+    }
+
 
     private var bluetoothConnectionReceiver:BroadcastReceiver = object: BroadcastReceiver() {
         override fun onReceive(context:Context, intent:Intent) {
@@ -126,20 +152,20 @@ class MainActivity : AppCompatActivity() {
 
             when(connectionStatus){
                 BluetoothConstants.STATE_LISTEN -> {
-                    textView.text = "Listening for incoming connection"
+                    supportActionBar?.setSubtitle("Listening for incoming connection")
                 }
                 BluetoothConstants.STATE_CONNECTED -> {
-                    textView.text = "Connected"
+                    supportActionBar?.setSubtitle("Connected")
                 }
                 BluetoothConstants.STATE_CONNECTING -> {
-                    textView.text = "Connecting"
+                    supportActionBar?.setSubtitle("Connecting")
                 }
                 BluetoothConstants.STATE_NONE -> {
-                    textView.text = "Not connected"
+                    supportActionBar?.setSubtitle("Not connected")
                     unBindService()
                 }
                 BluetoothConstants.STATE_ERROR -> {
-                    textView.text = "Something went wrong"
+                    supportActionBar?.setSubtitle("Something went wrong")
                 }
             }
         }
@@ -190,12 +216,6 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
-
-        // obsolete code
-//        bluetoothService = BluetoothConnectionService(mHandler).apply {
-//            start()
-//        }
-
     }
 
     /**
@@ -214,8 +234,10 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         Log.d("MA","onDestory")
-        super.onDestroy()
+        unregisterReceiver(bluetoothConnectionReceiver)
+        unregisterReceiver(bluetoothIncomingMessage)
         unBindService()
+        super.onDestroy()
 
     }
 
@@ -223,6 +245,7 @@ class MainActivity : AppCompatActivity() {
         Log.d("MA","onResume")
         super.onResume()
     }
+
 
     // unbind this activity from service
     private fun unBindService(){
@@ -232,7 +255,6 @@ class MainActivity : AppCompatActivity() {
             isBound = false
         }
     }
-
 
 
     // inflate the menu item in action bar
@@ -247,8 +269,9 @@ class MainActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
         return when (item!!.itemId) {
             R.id.secure_connect_scan -> {
+                Log.d("MainActivity","getState: "+myService?.getState())
                 if(isBound){
-                    if(myService?.getState() == BluetoothConstants.STATE_CONNECTED){
+                    if(myService!!.getState() == BluetoothConstants.STATE_CONNECTED){
                         val intent = Intent(this,DisconnectBluetoothActivity::class.java)
                         startActivityForResult(intent, ActivityConstants.REQUEST_BLUETOOTH_DISCONNECT)
                     }else{
@@ -265,7 +288,7 @@ class MainActivity : AppCompatActivity() {
             }
             R.id.settings -> {
                 val intent = Intent(this, SettingsActivity::class.java)
-                startActivityForResult(intent, ActivityConstants.REQUEST_BLUETOOTH_CONNECTION)
+                startActivityForResult(intent, ActivityConstants.REQUEST_SETTINGS)
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -274,6 +297,7 @@ class MainActivity : AppCompatActivity() {
 
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
         when(requestCode){
             // happens when user taps on a bluetooth macaddress
             ActivityConstants.REQUEST_BLUETOOTH_CONNECTION -> {
@@ -295,8 +319,9 @@ class MainActivity : AppCompatActivity() {
             // happens when user taps on grid in the 2d arena
             ActivityConstants.REQUEST_COORDINATE -> {
                 if(resultCode == Activity.RESULT_OK){
-                    val xCord = data?.extras?.getString("X")
-                    Log.d("MA","requestCode: $requestCode, resultCode: $resultCode, xCord: $xCord")
+                    val xCord = data?.extras?.getString("GRID_NUMBER")
+                    Log.d("MA","requestCode: $requestCode, resultCode: $resultCode, GRID_NUMBER: $xCord")
+                    sendMessageToBluetooth("algo:helloplseditthisshit")
                 }
             }
             // happens when user wants to disconnect bluetooth
@@ -307,6 +332,15 @@ class MainActivity : AppCompatActivity() {
                         myService?.stop() // stop bluetooth connection
                         unBindService() // unbind service from this activity
                     }
+                }
+            }
+
+            ActivityConstants.REQUEST_SETTINGS -> {
+                Log.d("MA","Request settings")
+                if (resultCode == Activity.RESULT_OK){
+                    val showMap = data?.extras?.getBoolean("SHOW_MAP_UPDATE_BUTTON")
+                    Log.d("MA","requestCode: $requestCode, resultCode: $resultCode, showMap: $showMap")
+                    initializeUpdateMap()
                 }
             }
         }

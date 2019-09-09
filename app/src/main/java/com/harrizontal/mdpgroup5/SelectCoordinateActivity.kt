@@ -13,16 +13,19 @@ class SelectCoordinateActivity : Activity() {
         setContentView(R.layout.activity_select_coordinate)
 
         val xText = findViewById<TextView>(R.id.x_coordinate)
-        val xCoord = intent.getIntExtra("X", 0)
-        xText.text = xCoord.toString()
+        val gridNumber = intent.getIntExtra("GRID_NUMBER", 0)
+        val xValue = intent.getStringExtra("X")
+        val yValue = intent.getStringExtra("Y")
+
+        xText.text = gridNumber.toString()
 
         val buttonWayPoint = findViewById<Button>(R.id.waypoint_btn)
 
         buttonWayPoint.setOnClickListener(View.OnClickListener {
             val messageIntent = Intent(this@SelectCoordinateActivity, MainActivity::class.java)
-            messageIntent.putExtra("X", xCoord.toString())
-//            messageIntent.putExtra("Y", yCoord)
-//            messageIntent.putExtra("TYPE", "wayPoint")
+            messageIntent.putExtra("GRID_NUMBER", gridNumber.toString())
+            messageIntent.putExtra("X", xValue)
+            messageIntent.putExtra("Y", yValue)
             setResult(Activity.RESULT_OK, messageIntent)
             finish()
         })

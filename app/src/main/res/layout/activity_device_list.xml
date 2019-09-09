@@ -14,9 +14,17 @@
 
         <TextView
                 android:id="@+id/title_paired_devices"
+                android:text="Paired Devices"
+                android:textSize="16sp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Paired Devices" />
+                android:paddingTop="10dp"
+                android:paddingStart="15dp"
+                android:paddingEnd="15dp"
+                android:paddingBottom="5dp"
+                android:textColor="#000000"
+                android:textStyle="bold"
+                />
 
         <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/list_paired"
@@ -27,12 +35,21 @@
                 app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
                 tools:listitem="@layout/list_item_bluetooth"/>
 
+
         <TextView
                 android:id="@+id/title_devices_found"
+                android:text="Devices Found"
+                android:textSize="16sp"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Devices Found"
-        />
+                android:paddingTop="10dp"
+                android:paddingStart="15dp"
+                android:paddingEnd="15dp"
+                android:paddingBottom="5dp"
+                android:textColor="#000000"
+                android:textStyle="bold"
+                />
+
         <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/list_bluetooth"
                 android:scrollbars="vertical"

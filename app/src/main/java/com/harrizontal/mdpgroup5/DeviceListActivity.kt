@@ -1,6 +1,6 @@
 package com.harrizontal.mdpgroup5
 
-import android.app.Activity
+
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
 import android.content.BroadcastReceiver
@@ -9,15 +9,13 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Bundle
 import android.util.Log
-import android.view.View
-import android.widget.AdapterView
-import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.harrizontal.mdpgroup5.adapter.RecycleAdapter
 import com.harrizontal.mdpgroup5.bluetooth.BTDevice
 
-class DeviceListActivity : Activity() {
+class DeviceListActivity : AppCompatActivity() {
     var EXTRA_DEVICE_ADDRESS = "device_address"
 
     private lateinit var bluetoothAdapter: BluetoothAdapter

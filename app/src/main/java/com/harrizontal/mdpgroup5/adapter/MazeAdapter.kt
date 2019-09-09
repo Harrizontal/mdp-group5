@@ -3,7 +3,6 @@ package com.harrizontal.mdpgroup5.adapter
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.graphics.drawable.Drawable
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -13,7 +12,7 @@ import com.harrizontal.mdpgroup5.R
 import com.harrizontal.mdpgroup5.SelectCoordinateActivity
 import com.harrizontal.mdpgroup5.constants.ActivityConstants
 import com.harrizontal.mdpgroup5.constants.MDPConstants
-import kotlinx.android.synthetic.main.activity_main.view.*
+import kotlinx.android.synthetic.main.list_item_grid_box.view.*
 
 class MazeAdapter(
     private val context: Context,
@@ -45,7 +44,7 @@ class MazeAdapter(
         val xCoord = position % columns
         val yCoord = (rows - 1 - (position / columns))
 
-        Log.d("MazeAdapter","Update block to $blockType. mapDescriptor.size: ${mapDescriptor.size}")
+        //Log.d("MazeAdapter","Update block to $blockType. mapDescriptor.size: ${mapDescriptor.size}")
         // update background based on type of block
         when(blockType.toString()){
             MDPConstants.UNEXPLORED -> {
@@ -72,7 +71,9 @@ class MazeAdapter(
         holder.itemView.setOnClickListener {
             Log.d("MazeAdapter","grid id: $device")
             val intent = Intent(context, SelectCoordinateActivity::class.java)
-            intent.putExtra("X",device)
+            intent.putExtra("GRID_NUMBER",device)
+            intent.putExtra("X",xCoord.toString())
+            intent.putExtra("Y",xCoord.toString())
             (context as Activity).startActivityForResult(
                 intent,
                 ActivityConstants.REQUEST_COORDINATE

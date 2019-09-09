@@ -14,9 +14,10 @@
             android:label="@string/app_name"
             android:roundIcon="@mipmap/ic_launcher_round"
             android:supportsRtl="true"
-            android:theme="@style/AppTheme"
+            android:theme="@style/AppTheme2"
             tools:ignore="GoogleAppIndexingWarning">
-        <activity android:name=".MainActivity">
+        <activity android:name=".MainActivity"
+                android:launchMode="singleTop">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
 
@@ -24,10 +25,16 @@
             </intent-filter>
         </activity>
 
-        <activity android:name=".DeviceListActivity" android:theme="@style/AppTheme"/>
-        <activity android:name=".DisconnectBluetoothActivity" android:theme="@style/AppTheme"/>
-        <activity android:name=".SelectCoordinateActivity" android:theme="@style/AppTheme"/>
-        <activity android:name=".SettingsActivity" android:theme="@style/AppTheme"/>
+        <activity android:name=".DeviceListActivity"
+                android:label="Select a device to connect"
+                android:parentActivityName=".MainActivity" />
+
+        <activity android:name=".DisconnectBluetoothActivity"/>
+        <activity android:name=".SelectCoordinateActivity"/>
+
+        <activity android:name=".SettingsActivity"
+                android:label="Settings"
+                android:parentActivityName=".MainActivity"/>
 
         <service android:name=".service.BService" />
 
