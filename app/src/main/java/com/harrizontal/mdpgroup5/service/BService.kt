@@ -48,7 +48,6 @@ class BService : Service(){
         mAdapter = BluetoothAdapter.getDefaultAdapter()
 
         device = intent!!.getExtras()!!.getParcelable<Parcelable>("device") as BluetoothDevice
-        Log.d("", "Service Handle: startClientThread")
         connectThread = ConnectThread(device!!,startId)
         connectThread!!.start()
         return super.onStartCommand(intent, flags, startId)

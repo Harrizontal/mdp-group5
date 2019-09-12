@@ -64,16 +64,16 @@ class MazeAdapter(
             }
         }
 
-        val device = mItems.get(position)
-        holder.itemView.textView.text = xCoord.toString() + "," + yCoord.toString()
+        val grid = mItems.get(position)
+        holder.itemView.textView.text = xCoord.toString() + "," + yCoord.toString() +" "+ position
 
 
         holder.itemView.setOnClickListener {
-            Log.d("MazeAdapter","grid id: $device")
+            Log.d("MazeAdapter","grid id: $grid")
             val intent = Intent(context, SelectCoordinateActivity::class.java)
-            intent.putExtra("GRID_NUMBER",device)
+            intent.putExtra("GRID_NUMBER",grid)
             intent.putExtra("X",xCoord.toString())
-            intent.putExtra("Y",xCoord.toString())
+            intent.putExtra("Y",yCoord.toString())
             (context as Activity).startActivityForResult(
                 intent,
                 ActivityConstants.REQUEST_COORDINATE

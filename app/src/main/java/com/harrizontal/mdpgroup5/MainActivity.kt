@@ -32,7 +32,11 @@ import com.harrizontal.mdpgroup5.constants.ActivityConstants
 import com.harrizontal.mdpgroup5.constants.BluetoothConstants
 import com.harrizontal.mdpgroup5.constants.MDPConstants
 import com.harrizontal.mdpgroup5.constants.SharedPreferenceConstants
+import com.harrizontal.mdpgroup5.constants.SharedPreferenceConstants.Companion.DEFAULT_VALUE_FUNCTION_1
+import com.harrizontal.mdpgroup5.constants.SharedPreferenceConstants.Companion.DEFAULT_VALUE_FUNCTION_2
 import com.harrizontal.mdpgroup5.constants.SharedPreferenceConstants.Companion.DEFAULT_VALUE_MAP_UPDATE
+import com.harrizontal.mdpgroup5.constants.SharedPreferenceConstants.Companion.SHARED_PREF_FUNCTION_1
+import com.harrizontal.mdpgroup5.constants.SharedPreferenceConstants.Companion.SHARED_PREF_FUNCTION_2
 import com.harrizontal.mdpgroup5.constants.SharedPreferenceConstants.Companion.SHARED_PREF_MAP_UPDATE
 import com.harrizontal.mdpgroup5.helper.Utils
 import com.harrizontal.mdpgroup5.service.BService
@@ -41,8 +45,6 @@ class MainActivity : AppCompatActivity() {
 
 
     private lateinit var bluetoothAdapter: BluetoothAdapter
-    private lateinit var bluetoothManager: BluetoothManager
-    private lateinit var bluetoothService: BluetoothConnectionService
 
     private var mMapDescriptor: ArrayList<Char> = ArrayList()
 
@@ -61,7 +63,7 @@ class MainActivity : AppCompatActivity() {
         registerReceiver(bluetoothConnectionReceiver, IntentFilter("bluetoothConnectionStatus"))
         registerReceiver(bluetoothIncomingMessage,IntentFilter("bluetoothIncomingMessage"))
 
-        mMapDescriptor = Utils().getMapDescriptor(MDPConstants.DEFAULT_MAP_DESCRIPTOR_STRING)
+        //mMapDescriptor = Utils().getMapDescriptor(MDPConstants.DEFAULT_MAP_DESCRIPTOR_STRING)
 
         Log.d("MA","Size of Descriptor: ${mMapDescriptor!!.size}")
 
@@ -90,27 +92,27 @@ class MainActivity : AppCompatActivity() {
 
 
         button_test.setOnClickListener {
-            sendMessageToBluetooth(MDPConstants.DEFAULT_MAP_DESCRIPTOR_STRING)
+            Utils().convertCoordinatesToGridId(14,0)
         }
 
         button_turnleft.setOnClickListener {
-            sendMessageToBluetooth("algorithm:turnleft")
+            sendMessageToBluetooth("mov:left,1")
         }
 
         button_turnRight.setOnClickListener {
-            sendMessageToBluetooth("algorithm:turnRight")
+            sendMessageToBluetooth("mov:right,1")
         }
 
         button_up.setOnClickListener {
-            sendMessageToBluetooth("algorithm:up")
+            sendMessageToBluetooth("mov:forward,1")
         }
 
         button_exploration.setOnClickListener {
-            sendMessageToBluetooth("algorithm:exploration")
+            sendMessageToBluetooth("alg:explore")
         }
 
         button_fastest_path.setOnClickListener {
-            sendMessageToBluetooth("algorithm:fastestpath")
+            sendMessageToBluetooth("alg:fast")
         }
 
         initializeUpdateMap()
@@ -174,10 +176,24 @@ class MainActivity : AppCompatActivity() {
     private var bluetoothIncomingMessage: BroadcastReceiver = object: BroadcastReceiver(){
         override fun onReceive(context: Context?, intent: Intent?) {
             val message = intent!!.getStringExtra("IncomingMessage")
-            Log.d("MainActivity","Received some message :${message}")
+            Log.d("MainActivity","Received some message: ${message}")
 
-            mMapDescriptor = Utils().getMapDescriptor(message)
-            mazeAdapter.updateMap(mMapDescriptor) // update maps when receive data from raspberry pi
+            val messageParts = message.split(":")
+
+            when(messageParts[0]){
+                "map"->{
+                    Log.d("MainActivity","message: $messageParts")
+                    mazeAdapter.updateMap(Utils().getMapDescriptor(messageParts[1]))
+                }
+                "pos"->{
+                    val idToUpdate = Utils().getRobotPositions(messageParts[1])
+                    mMapDescriptor.set(idToUpdate,'3') // 3 is robot head lul
+                    mazeAdapter.notifyDataSetChanged()
+                }
+            }
+            //mMapDescriptor = Utils().getMapDescriptor(message)
+            //mazeAdapter.updateMap(mMapDescriptor) // update maps when receive data from raspberry pi
+
 
             val textMessageReceived = findViewById<TextView>(R.id.text_message_received)
             textMessageReceived.text = message
@@ -233,7 +249,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        Log.d("MA","onDestory")
+        Log.d("MA","onDestroy")
         unregisterReceiver(bluetoothConnectionReceiver)
         unregisterReceiver(bluetoothIncomingMessage)
         unBindService()
@@ -286,7 +302,25 @@ class MainActivity : AppCompatActivity() {
                 }
                 true
             }
-            R.id.settings -> {
+            R.id.menu_function1 -> {
+                val sharedPref: SharedPreferences = getSharedPreferences(SharedPreferenceConstants.SHARED_PREF_MDP, Context.MODE_PRIVATE)
+                val message = sharedPref.getString(
+                    SHARED_PREF_FUNCTION_1,
+                    DEFAULT_VALUE_FUNCTION_1
+                )
+                sendMessageToBluetooth(message)
+                true
+            }
+            R.id.menu_function2 -> {
+                val sharedPref: SharedPreferences = getSharedPreferences(SharedPreferenceConstants.SHARED_PREF_MDP, Context.MODE_PRIVATE)
+                val message = sharedPref.getString(
+                    SHARED_PREF_FUNCTION_2,
+                    DEFAULT_VALUE_FUNCTION_2
+                )
+                sendMessageToBluetooth(message)
+                true
+            }
+            R.id.menu_settings -> {
                 val intent = Intent(this, SettingsActivity::class.java)
                 startActivityForResult(intent, ActivityConstants.REQUEST_SETTINGS)
                 true
@@ -320,8 +354,9 @@ class MainActivity : AppCompatActivity() {
             ActivityConstants.REQUEST_COORDINATE -> {
                 if(resultCode == Activity.RESULT_OK){
                     val xCord = data?.extras?.getString("GRID_NUMBER")
+                    val yCord = data?.extras?.getString("")
                     Log.d("MA","requestCode: $requestCode, resultCode: $resultCode, GRID_NUMBER: $xCord")
-                    sendMessageToBluetooth("algo:helloplseditthisshit")
+                    sendMessageToBluetooth("alg:swp,$")
                 }
             }
             // happens when user wants to disconnect bluetooth

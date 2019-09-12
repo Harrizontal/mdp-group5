@@ -17,7 +17,7 @@ class SelectCoordinateActivity : Activity() {
         val xValue = intent.getStringExtra("X")
         val yValue = intent.getStringExtra("Y")
 
-        xText.text = gridNumber.toString()
+        xText.text = "($xValue,$yValue)"
 
         val buttonWayPoint = findViewById<Button>(R.id.waypoint_btn)
 
