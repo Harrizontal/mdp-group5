@@ -2,32 +2,24 @@ package com.harrizontal.mdpgroup5
 
 import android.Manifest
 import android.bluetooth.BluetoothAdapter
-import android.bluetooth.BluetoothDevice
 import android.content.pm.PackageManager
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.os.Handler
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import kotlinx.android.synthetic.main.activity_main.*
-import android.annotation.SuppressLint
 import android.app.Activity
-import android.app.AlertDialog
 import android.content.*
 import android.os.IBinder
-import android.os.Message
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.harrizontal.mdpgroup5.adapter.*
-import com.harrizontal.mdpgroup5.bluetooth.BluetoothConnectionService
-import com.harrizontal.mdpgroup5.bluetooth.BluetoothManager
 import com.harrizontal.mdpgroup5.constants.ActivityConstants
 import com.harrizontal.mdpgroup5.constants.BluetoothConstants
 import com.harrizontal.mdpgroup5.constants.MDPConstants
@@ -47,6 +39,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var bluetoothAdapter: BluetoothAdapter
 
     private var mMapDescriptor: ArrayList<Char> = ArrayList()
+    private val startArea: ArrayList<Int> = MDPConstants.DEFAULT_START_AREA
+    private val goalArea: ArrayList<Int> = MDPConstants.DEFAULT_END_AREA
+    private var robotPositions: ArrayList<Pair<Int,Pair<Char,Boolean>>> = MDPConstants.DEFAULT_ROBOT_POSITION
 
     private lateinit var mazeAdapter: MazeAdapter
 
@@ -63,7 +58,8 @@ class MainActivity : AppCompatActivity() {
         registerReceiver(bluetoothConnectionReceiver, IntentFilter("bluetoothConnectionStatus"))
         registerReceiver(bluetoothIncomingMessage,IntentFilter("bluetoothIncomingMessage"))
 
-        //mMapDescriptor = Utils().getMapDescriptor(MDPConstants.DEFAULT_MAP_DESCRIPTOR_STRING)
+
+        mMapDescriptor = Utils().convertMapDescriptor1ToMapRecycleFormat(MDPConstants.DEFAULT_MAP_DESCRIPTOR_STRING)
 
         Log.d("MA","Size of Descriptor: ${mMapDescriptor!!.size}")
 
@@ -85,14 +81,13 @@ class MainActivity : AppCompatActivity() {
         // maze
         val recycleViewMaze = findViewById<RecyclerView>(R.id.recyclerview_maze)
         val gridLayoutManager = GridLayoutManager(this,MDPConstants.NUM_COLUMNS)
-        mazeAdapter = MazeAdapter(this,MDPConstants.NUM_ROWS,MDPConstants.NUM_COLUMNS,mMapDescriptor)
+        mazeAdapter = MazeAdapter(this,MDPConstants.NUM_ROWS,MDPConstants.NUM_COLUMNS,mMapDescriptor,startArea,goalArea,robotPositions)
         recycleViewMaze.layoutManager = gridLayoutManager
         recycleViewMaze.adapter = mazeAdapter
 
 
-
         button_test.setOnClickListener {
-            Utils().convertCoordinatesToGridId(14,0)
+            //Utils().convertCoordinatesToGridId(14,0)
         }
 
         button_turnleft.setOnClickListener {
@@ -183,17 +178,14 @@ class MainActivity : AppCompatActivity() {
             when(messageParts[0]){
                 "map"->{
                     Log.d("MainActivity","message: $messageParts")
-                    mazeAdapter.updateMap(Utils().getMapDescriptor(messageParts[1]))
+                    mazeAdapter.updateMap(Utils().getMapDescriptorsToMapRecycleFormat(messageParts[1]))
                 }
                 "pos"->{
-                    val idToUpdate = Utils().getRobotPositions(messageParts[1])
-                    mMapDescriptor.set(idToUpdate,'3') // 3 is robot head lul
+                    robotPositions.clear()
+                    robotPositions.addAll(Utils().getRobotPositions(messageParts[1]))
                     mazeAdapter.notifyDataSetChanged()
                 }
             }
-            //mMapDescriptor = Utils().getMapDescriptor(message)
-            //mazeAdapter.updateMap(mMapDescriptor) // update maps when receive data from raspberry pi
-
 
             val textMessageReceived = findViewById<TextView>(R.id.text_message_received)
             textMessageReceived.text = message

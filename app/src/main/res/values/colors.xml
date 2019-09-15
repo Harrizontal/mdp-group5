@@ -16,4 +16,7 @@
 
     <color name="colorPrimaryButtonCTA">#29D63D</color>
     <color name="colorSecondaryButtonCTA">@color/colorPrimaryLight</color>
+
+    <color name="colorStartArena">#9029D63D</color>
+    <color name="colorGoalArena">#90F10E0E</color>
 </resources>

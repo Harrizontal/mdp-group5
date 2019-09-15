@@ -3,22 +3,31 @@ package com.harrizontal.mdpgroup5.adapter
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.harrizontal.mdpgroup5.R
 import com.harrizontal.mdpgroup5.SelectCoordinateActivity
 import com.harrizontal.mdpgroup5.constants.ActivityConstants
 import com.harrizontal.mdpgroup5.constants.MDPConstants
 import kotlinx.android.synthetic.main.list_item_grid_box.view.*
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.constraintlayout.widget.ConstraintSet
+import com.harrizontal.mdpgroup5.R
+import android.graphics.LightingColorFilter
+import android.graphics.PorterDuff
+
 
 class MazeAdapter(
     private val context: Context,
     private val rows: Int,
     private val columns: Int,
-    private var mapDescriptor: ArrayList<Char>
+    private var mapDescriptor: ArrayList<Char>,
+    private var startArea: ArrayList<Int>, // ArrayList of start and end position
+    private var goalArea: ArrayList<Int>,
+    private var robotPositions: ArrayList<Pair<Int,Pair<Char,Boolean>>>
 ): RecyclerView.Adapter<MazeAdapter.MazeHolder>() {
     private val mItems: IntArray
 
@@ -44,9 +53,8 @@ class MazeAdapter(
         val xCoord = position % columns
         val yCoord = (rows - 1 - (position / columns))
 
-        //Log.d("MazeAdapter","Update block to $blockType. mapDescriptor.size: ${mapDescriptor.size}")
         // update background based on type of block
-        when(blockType.toString()){
+        when(blockType){
             MDPConstants.UNEXPLORED -> {
                 holder.itemView.setBackgroundResource(R.drawable.cell_item_unexplored)
             }
@@ -56,11 +64,32 @@ class MazeAdapter(
             MDPConstants.OBSTACLE -> {
                 holder.itemView.setBackgroundResource(R.drawable.cell_item_obstacle)
             }
-            MDPConstants.ROBOT_HEAD -> {
-                holder.itemView.setBackgroundResource(R.drawable.cell_item_robot_head)
+        }
+
+        // setting up start area in map
+        for (x in 0 until startArea.size){
+            if(position == startArea.get(x)){
+                holder.itemView.textView.setTextColor(Color.BLUE)
+                holder.itemView.view_shaded.setBackgroundColor(context.resources.getColor(R.color.colorStartArena))
+                break
             }
-            MDPConstants.ROBOT_BODY -> {
-                holder.itemView.setBackgroundResource(R.drawable.cell_item_robot_body)
+        }
+
+        // setting up goal area in map
+        for (x in 0 until goalArea.size){
+            if(position == goalArea.get(x)){
+                holder.itemView.textView.setTextColor(Color.GREEN)
+                holder.itemView.view_shaded.setBackgroundColor(context.resources.getColor(R.color.colorGoalArena))
+                break
+            }
+        }
+
+        // setting up robot position in the map
+        for (k in 0 until robotPositions.size){
+            if(position == robotPositions.get(k).first){
+                Log.d("RobotPosition","robot: ${robotPositions.get(k).second}")
+                generateRobotPart(robotPositions.get(k).second.first,holder.itemView,robotPositions.get(k).second.second)
+                break
             }
         }
 
@@ -95,5 +124,78 @@ class MazeAdapter(
         mapDescriptor.clear()
         mapDescriptor.addAll(mMapDescriptor)
         notifyDataSetChanged()
+    }
+
+
+    /**
+     * Generate robot body and robot head for 2D Arena
+     */
+    private fun generateRobotPart(robotPart: Char, itemView: View,isHead: Boolean){
+        val set = ConstraintSet()
+        val layout: ConstraintLayout = itemView.findViewById(R.id.layout_grid) as ConstraintLayout
+        set.clone(layout)
+        set.clear(R.id.image_robot,ConstraintSet.LEFT)
+        set.clear(R.id.image_robot,ConstraintSet.RIGHT)
+        set.clear(R.id.image_robot,ConstraintSet.TOP)
+        set.clear(R.id.image_robot,ConstraintSet.BOTTOM)
+        when(robotPart){
+            MDPConstants.ROBOT_TOP_LEFT -> {
+                itemView.image_robot.setImageDrawable(context.resources.getDrawable(R.drawable.cell_robot_topleft))
+                set.connect(R.id.image_robot,ConstraintSet.BOTTOM,ConstraintSet.PARENT_ID,ConstraintSet.BOTTOM,0)
+                set.connect(R.id.image_robot,ConstraintSet.RIGHT,ConstraintSet.PARENT_ID,ConstraintSet.RIGHT,0)
+            }
+            MDPConstants.ROBOT_TOP -> {
+                itemView.image_robot.setImageDrawable(context.resources.getDrawable(R.drawable.cell_robot_topbottom))
+                set.connect(R.id.image_robot,ConstraintSet.BOTTOM,ConstraintSet.PARENT_ID,ConstraintSet.BOTTOM,0)
+                set.connect(R.id.image_robot,ConstraintSet.RIGHT,ConstraintSet.PARENT_ID,ConstraintSet.RIGHT,0)
+                set.connect(R.id.image_robot,ConstraintSet.LEFT,ConstraintSet.PARENT_ID,ConstraintSet.LEFT,0)
+            }
+            MDPConstants.ROBOT_TOP_RIGHT ->{
+                itemView.image_robot.setImageDrawable(context.resources.getDrawable(R.drawable.cell_robot_topright))
+                set.connect(R.id.image_robot,ConstraintSet.BOTTOM,ConstraintSet.PARENT_ID,ConstraintSet.BOTTOM,0)
+                set.connect(R.id.image_robot,ConstraintSet.LEFT,ConstraintSet.PARENT_ID,ConstraintSet.LEFT,0)
+            }
+            MDPConstants.ROBOT_MIDDLE_LEFT -> {
+                itemView.image_robot.setImageDrawable(context.resources.getDrawable(R.drawable.cell_robot_middle_side))
+                set.connect(R.id.image_robot,ConstraintSet.BOTTOM,ConstraintSet.PARENT_ID,ConstraintSet.BOTTOM,0)
+                set.connect(R.id.image_robot,ConstraintSet.RIGHT,ConstraintSet.PARENT_ID,ConstraintSet.RIGHT,0)
+                set.connect(R.id.image_robot,ConstraintSet.TOP,ConstraintSet.PARENT_ID,ConstraintSet.TOP,0)
+            }
+            MDPConstants.ROBOT_MIDDLE -> {
+                itemView.image_robot.setImageDrawable(context.resources.getDrawable(R.drawable.cell_robot_middle))
+                set.connect(R.id.image_robot,ConstraintSet.BOTTOM,ConstraintSet.PARENT_ID,ConstraintSet.BOTTOM,0)
+                set.connect(R.id.image_robot,ConstraintSet.RIGHT,ConstraintSet.PARENT_ID,ConstraintSet.RIGHT,0)
+                set.connect(R.id.image_robot,ConstraintSet.TOP,ConstraintSet.PARENT_ID,ConstraintSet.TOP,0)
+                set.connect(R.id.image_robot,ConstraintSet.LEFT,ConstraintSet.PARENT_ID,ConstraintSet.LEFT,0)
+            }
+            MDPConstants.ROBOT_MIDDLE_RIGHT -> {
+                itemView.image_robot.setImageDrawable(context.resources.getDrawable(R.drawable.cell_robot_middle_side))
+                set.connect(R.id.image_robot,ConstraintSet.BOTTOM,ConstraintSet.PARENT_ID,ConstraintSet.BOTTOM,0)
+                set.connect(R.id.image_robot,ConstraintSet.TOP,ConstraintSet.PARENT_ID,ConstraintSet.TOP,0)
+                set.connect(R.id.image_robot,ConstraintSet.LEFT,ConstraintSet.PARENT_ID,ConstraintSet.LEFT,0)
+            }
+            MDPConstants.ROBOT_BOTTOM_LEFT ->{
+                itemView.image_robot.setImageDrawable(context.resources.getDrawable(R.drawable.cell_robot_bottomleft))
+                set.connect(R.id.image_robot,ConstraintSet.RIGHT,ConstraintSet.PARENT_ID,ConstraintSet.RIGHT,0)
+                set.connect(R.id.image_robot,ConstraintSet.TOP,ConstraintSet.PARENT_ID,ConstraintSet.TOP,0)
+            }
+            MDPConstants.ROBOT_BOTTOM ->{
+                itemView.image_robot.setImageDrawable(context.resources.getDrawable(R.drawable.cell_robot_topbottom))
+                set.connect(R.id.image_robot,ConstraintSet.LEFT,ConstraintSet.PARENT_ID,ConstraintSet.LEFT,0)
+                set.connect(R.id.image_robot,ConstraintSet.TOP,ConstraintSet.PARENT_ID,ConstraintSet.TOP,0)
+                set.connect(R.id.image_robot,ConstraintSet.RIGHT,ConstraintSet.PARENT_ID,ConstraintSet.RIGHT,0)
+            }
+            MDPConstants.ROBOT_BOTTOM_RIGHT ->{
+                itemView.image_robot.setImageDrawable(context.resources.getDrawable(R.drawable.cell_robot_bottomright))
+                set.connect(R.id.image_robot,ConstraintSet.LEFT,ConstraintSet.PARENT_ID,ConstraintSet.LEFT,0)
+                set.connect(R.id.image_robot,ConstraintSet.TOP,ConstraintSet.PARENT_ID,ConstraintSet.TOP,0)
+            }
+        }
+
+        if(isHead){
+            itemView.image_robot.setColorFilter(Color.BLACK, PorterDuff.Mode.OVERLAY)
+        }
+
+        set.applyTo(layout)
     }
 }

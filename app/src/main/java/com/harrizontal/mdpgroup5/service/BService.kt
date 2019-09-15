@@ -189,6 +189,7 @@ class BService : Service(){
             var tmp: BluetoothSocket? = null
             try {
                 val uuid = BluetoothConstants.myUUID
+                //tmp = mmDevice.createInsecureRfcommSocketToServiceRecord(uuid)
                 tmp = mmDevice.createRfcommSocketToServiceRecord(uuid)
             } catch (e: IOException) {
                 Log.e("ConnectThread","error: "+e)
