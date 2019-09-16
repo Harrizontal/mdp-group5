@@ -16,7 +16,6 @@ import kotlinx.android.synthetic.main.list_item_grid_box.view.*
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import com.harrizontal.mdpgroup5.R
-import android.graphics.LightingColorFilter
 import android.graphics.PorterDuff
 
 
@@ -83,18 +82,21 @@ class MazeAdapter(
                 break
             }
         }
+        //Fix a bug where robot display in the first few items in the recycleview
+        holder.itemView.image_robot.visibility = View.GONE
 
         // setting up robot position in the map
         for (k in 0 until robotPositions.size){
             if(position == robotPositions.get(k).first){
-                Log.d("RobotPosition","robot: ${robotPositions.get(k).second}")
+                Log.d("MazeAdapter","Updating $position")
+                holder.itemView.image_robot.visibility = View.VISIBLE
                 generateRobotPart(robotPositions.get(k).second.first,holder.itemView,robotPositions.get(k).second.second)
                 break
             }
         }
 
         val grid = mItems.get(position)
-        holder.itemView.textView.text = xCoord.toString() + "," + yCoord.toString() +" "+ position
+        holder.itemView.textView.text = xCoord.toString() + "," + yCoord.toString()
 
 
         holder.itemView.setOnClickListener {
@@ -117,13 +119,6 @@ class MazeAdapter(
             //5
             private val PHOTO_KEY = "PHOTO"
         }
-    }
-
-    fun updateMap(mMapDescriptor: ArrayList<Char>){
-        Log.d("MazeAdapter","Uploading map with ${mMapDescriptor.size} characters")
-        mapDescriptor.clear()
-        mapDescriptor.addAll(mMapDescriptor)
-        notifyDataSetChanged()
     }
 
 
@@ -191,6 +186,8 @@ class MazeAdapter(
                 set.connect(R.id.image_robot,ConstraintSet.TOP,ConstraintSet.PARENT_ID,ConstraintSet.TOP,0)
             }
         }
+
+        //itemView.image_robot.visibility = View.VISIBLE
 
         if(isHead){
             itemView.image_robot.setColorFilter(Color.BLACK, PorterDuff.Mode.OVERLAY)

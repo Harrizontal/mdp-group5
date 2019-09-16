@@ -48,7 +48,7 @@ class BluetoothManager private constructor() : Serializable {
 //    fun reconnect() {
 //        for (bluetoothService in listBluetoothConnectionServices) {
 //            if (bluetoothService.getState() != BluetoothConstants.STATE_CONNECTED) {
-//                bluetoothService.stop()
+//                bluetoothService.stopAllConnection()
 //                bluetoothService.connect()
 //            }
 //        }

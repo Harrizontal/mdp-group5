@@ -21,6 +21,8 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.harrizontal.mdpgroup5.adapter.*
 import com.harrizontal.mdpgroup5.constants.ActivityConstants
+import com.harrizontal.mdpgroup5.constants.ActivityConstants.Companion.REQUEST_START_COORDINATE
+import com.harrizontal.mdpgroup5.constants.ActivityConstants.Companion.REQUEST_WAYPOINT
 import com.harrizontal.mdpgroup5.constants.BluetoothConstants
 import com.harrizontal.mdpgroup5.constants.MDPConstants
 import com.harrizontal.mdpgroup5.constants.SharedPreferenceConstants
@@ -43,6 +45,7 @@ class MainActivity : AppCompatActivity() {
     private val goalArea: ArrayList<Int> = MDPConstants.DEFAULT_END_AREA
     private var robotPositions: ArrayList<Pair<Int,Pair<Char,Boolean>>> = MDPConstants.DEFAULT_ROBOT_POSITION
 
+    private lateinit var sharedPref: SharedPreferences
     private lateinit var mazeAdapter: MazeAdapter
 
     var myService: BService? = null
@@ -57,6 +60,10 @@ class MainActivity : AppCompatActivity() {
 
         registerReceiver(bluetoothConnectionReceiver, IntentFilter("bluetoothConnectionStatus"))
         registerReceiver(bluetoothIncomingMessage,IntentFilter("bluetoothIncomingMessage"))
+
+        sharedPref = getSharedPreferences(
+            SharedPreferenceConstants.SHARED_PREF_MDP, Context.MODE_PRIVATE)
+
 
 
         mMapDescriptor = Utils().convertMapDescriptor1ToMapRecycleFormat(MDPConstants.DEFAULT_MAP_DESCRIPTOR_STRING)
@@ -86,9 +93,6 @@ class MainActivity : AppCompatActivity() {
         recycleViewMaze.adapter = mazeAdapter
 
 
-        button_test.setOnClickListener {
-            //Utils().convertCoordinatesToGridId(14,0)
-        }
 
         button_turnleft.setOnClickListener {
             sendMessageToBluetooth("mov:left,1")
@@ -110,6 +114,7 @@ class MainActivity : AppCompatActivity() {
             sendMessageToBluetooth("alg:fast")
         }
 
+
         initializeUpdateMap()
 
         initDiscoverBluetooth()
@@ -130,6 +135,11 @@ class MainActivity : AppCompatActivity() {
                 visibility = View.VISIBLE
                 setOnClickListener {
                     Log.d("MainActivity","Update Map")
+                    val sharedPrefMapUpdate = sharedPref.getBoolean(SHARED_PREF_MAP_UPDATE,DEFAULT_VALUE_MAP_UPDATE)
+                    if(!sharedPrefMapUpdate){
+                        Log.d("MA","Map updated");
+                        mazeAdapter.notifyDataSetChanged()
+                    }
                 }
             }
         }else{
@@ -140,6 +150,8 @@ class MainActivity : AppCompatActivity() {
     }
 
 
+    private var retryConnectionSecond = 3
+    private var previousBluetoothState: Int = BluetoothConstants.STATE_NONE
     private var bluetoothConnectionReceiver:BroadcastReceiver = object: BroadcastReceiver() {
         override fun onReceive(context:Context, intent:Intent) {
             val connectionStatus = intent.getIntExtra("ConnectionStatus",99)
@@ -159,12 +171,27 @@ class MainActivity : AppCompatActivity() {
                 }
                 BluetoothConstants.STATE_NONE -> {
                     supportActionBar?.setSubtitle("Not connected")
-                    unBindService()
+                    //unBindService()
                 }
                 BluetoothConstants.STATE_ERROR -> {
                     supportActionBar?.setSubtitle("Something went wrong")
                 }
+                BluetoothConstants.STATE_RETRY_CONNECTING -> {
+
+                    if(retryConnectionSecond < 0){
+                        supportActionBar?.setSubtitle("Attempting connection...")
+                    }else{
+                        supportActionBar?.setSubtitle("Retrying connection in $retryConnectionSecond")
+                    }
+                    retryConnectionSecond--
+                }
             }
+            if(connectionStatus.equals(previousBluetoothState)){
+                retryConnectionSecond = 3
+            }
+
+
+
         }
     }
 
@@ -175,16 +202,23 @@ class MainActivity : AppCompatActivity() {
 
             val messageParts = message.split(":")
 
+
+
             when(messageParts[0]){
                 "map"->{
-                    Log.d("MainActivity","message: $messageParts")
-                    mazeAdapter.updateMap(Utils().getMapDescriptorsToMapRecycleFormat(messageParts[1]))
+                    mMapDescriptor.clear()
+                    mMapDescriptor.addAll(Utils().getMapDescriptorsToMapRecycleFormat(messageParts[1]))
                 }
                 "pos"->{
                     robotPositions.clear()
                     robotPositions.addAll(Utils().getRobotPositions(messageParts[1]))
-                    mazeAdapter.notifyDataSetChanged()
                 }
+            }
+
+            val sharedPrefMapUpdate = sharedPref.getBoolean(SHARED_PREF_MAP_UPDATE,DEFAULT_VALUE_MAP_UPDATE)
+            if(sharedPrefMapUpdate){
+                // updates the 2d arena map with robot positions and map descriptor (unexplored, explored, obstacle)
+                mazeAdapter.notifyDataSetChanged()
             }
 
             val textMessageReceived = findViewById<TextView>(R.id.text_message_received)
@@ -279,7 +313,9 @@ class MainActivity : AppCompatActivity() {
             R.id.secure_connect_scan -> {
                 Log.d("MainActivity","getState: "+myService?.getState())
                 if(isBound){
-                    if(myService!!.getState() == BluetoothConstants.STATE_CONNECTED){
+                    if(myService!!.getState() == BluetoothConstants.STATE_CONNECTED ||
+                            myService!!.getState() == BluetoothConstants.STATE_CONNECTING ||
+                            myService!!.getState() == BluetoothConstants.STATE_RETRY_CONNECTING){
                         val intent = Intent(this,DisconnectBluetoothActivity::class.java)
                         startActivityForResult(intent, ActivityConstants.REQUEST_BLUETOOTH_DISCONNECT)
                     }else{
@@ -345,10 +381,25 @@ class MainActivity : AppCompatActivity() {
             // happens when user taps on grid in the 2d arena
             ActivityConstants.REQUEST_COORDINATE -> {
                 if(resultCode == Activity.RESULT_OK){
-                    val xCord = data?.extras?.getString("GRID_NUMBER")
-                    val yCord = data?.extras?.getString("")
-                    Log.d("MA","requestCode: $requestCode, resultCode: $resultCode, GRID_NUMBER: $xCord")
-                    sendMessageToBluetooth("alg:swp,$")
+                    val xCord = data?.extras?.getString("X")
+                    val yCord = data?.extras?.getString("Y")
+                    val requestType = data?.extras?.getInt("REQUEST_COORDINATE_TYPE")
+                    Log.d("MA","requestCode: $requestCode, resultCode: $resultCode, X:$xCord Y:$yCord")
+
+                    when(requestType){
+                        REQUEST_WAYPOINT -> {
+                            sendMessageToBluetooth("alg:swp,$")
+                        }
+                        REQUEST_START_COORDINATE -> {
+                            sendMessageToBluetooth("alg:start,")
+                            val robotPositionsString = xCord+","+yCord+",n" // hardcode to norith first
+                            Log.d("MainActivity","before robotPositions: $robotPositions")
+                            robotPositions.clear()
+                            robotPositions.addAll(Utils().getRobotPositions(robotPositionsString))
+                            Log.d("MainActivity","after robotPositions: $robotPositions")
+                            mazeAdapter.notifyDataSetChanged() // update the arena map
+                        }
+                    }
                 }
             }
             // happens when user wants to disconnect bluetooth
@@ -356,7 +407,7 @@ class MainActivity : AppCompatActivity() {
                 Log.d("MA","Request bluetooth disconnect")
                 if(resultCode == Activity.RESULT_OK){
                     if(isBound){
-                        myService?.stop() // stop bluetooth connection
+                        myService?.stopAllConnection() // stopAllConnection bluetooth connection
                         unBindService() // unbind service from this activity
                     }
                 }

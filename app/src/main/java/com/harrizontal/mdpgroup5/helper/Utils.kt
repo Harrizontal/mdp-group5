@@ -182,28 +182,11 @@ class Utils {
         robotHeadAndBody.add(Pair(convertCoordinatesToGridId(x8,y8),Pair(MDPConstants.ROBOT_BOTTOM,calculateRobotType(8,parts[2]))))
         robotHeadAndBody.add(Pair(convertCoordinatesToGridId(x9,y9),Pair(MDPConstants.ROBOT_BOTTOM_RIGHT,calculateRobotType(9,parts[2]))))
 
+        Log.d("Utils","robotHeadAndBody: $robotHeadAndBody")
         return robotHeadAndBody
     }
 
 
-    fun clearRobotPosition(mapDescriptorString: ArrayList<Char>): ArrayList<Char>{
-        val newMapDescriptorString = ArrayList<Char>()
-
-        for (x in 0 until mapDescriptorString.size){
-            when(mapDescriptorString[x]){
-                MDPConstants.ROBOT_BODY -> {
-                    newMapDescriptorString.add(MDPConstants.EXPLORED)
-                }
-                MDPConstants.ROBOT_HEAD -> {
-                    newMapDescriptorString.add(MDPConstants.EXPLORED)
-                }
-                else -> {
-                    newMapDescriptorString.add(mapDescriptorString[x])
-                }
-            }
-        }
-        return newMapDescriptorString
-    }
 
     private fun convertCoordinatesToGridId(coordinateX:Int, coordinateY: Int): Int{
 
@@ -256,6 +239,38 @@ class Utils {
             }
         }
         return false
+    }
+
+    fun recalculateMiddleRobotPosition(xCoordinate: Int, yCoordinate: Int): Pair<Int,Int>{
+
+        var newXValue: Int
+        var newYValue: Int
+
+        when(xCoordinate){
+            0 -> {
+                newXValue = 1
+            }
+            (MDPConstants.NUM_COLUMNS - 1) -> {
+                newXValue = MDPConstants.NUM_COLUMNS - 2
+            }
+            else ->{
+                newXValue = xCoordinate
+            }
+        }
+
+        when(yCoordinate){
+            0 -> {
+                newYValue = 1
+            }
+            (MDPConstants.NUM_ROWS - 1) -> {
+                newYValue = MDPConstants.NUM_ROWS - 2
+            }
+            else -> {
+                newYValue = yCoordinate
+            }
+        }
+
+        return Pair(newXValue,newYValue)
     }
 
 

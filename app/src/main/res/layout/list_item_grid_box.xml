@@ -5,6 +5,9 @@
         android:orientation="vertical"
         android:layout_width="25dp"
         android:background="@drawable/border"
+        android:foreground="?android:attr/selectableItemBackground"
+        android:clickable="true"
+        android:focusable="true"
         android:layout_height="25dp">
 
     <!-- for start and goal arena -->

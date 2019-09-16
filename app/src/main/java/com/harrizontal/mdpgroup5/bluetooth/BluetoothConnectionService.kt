@@ -50,7 +50,7 @@ class BluetoothConnectionService internal constructor(mHandler: Handler){
         Log.d("BCS","Connecting to: ${device.name} ${device.address}")
 
         // check if there is ongoing connection to bluetooth
-        // if so, stop it
+        // if so, stopAllConnection it
         if (connectedThread != null) {
             connectedThread!!.toStop()
             connectedThread!!.cancel()
