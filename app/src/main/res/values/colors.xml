@@ -19,4 +19,5 @@
 
     <color name="colorStartArena">#9029D63D</color>
     <color name="colorGoalArena">#90F10E0E</color>
+    <color name="colorWayPoint">#D3FDD300</color>
 </resources>

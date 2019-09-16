@@ -89,13 +89,11 @@ class Utils {
 
         Log.d("Utils","mapDescriptor2: ${correctedBinaryForMap2}")
 
-
         val mapDescriptor = ArrayList<Char>()
         for (i in 0 until correctedBinaryForMap2.length){
             mapDescriptor.add(correctedBinaryForMap2[i])
         }
 
-        convertCoordinatesToGridId(0,18);
         return mapDescriptor
     }
 
@@ -188,7 +186,7 @@ class Utils {
 
 
 
-    private fun convertCoordinatesToGridId(coordinateX:Int, coordinateY: Int): Int{
+    fun convertCoordinatesToGridId(coordinateX:Int, coordinateY: Int): Int{
 
         // calculate row based on y
         var x = coordinateX
@@ -273,5 +271,24 @@ class Utils {
         return Pair(newXValue,newYValue)
     }
 
+    fun getMapDescriptorsToMapRecycleFormat2(mapDescriptorString: String): ArrayList<Char> {
+
+        Log.d("Utils","mapDescriptorString's length: ${mapDescriptorString.length}")
+        val binary = convertHexStringToBinaryString(mapDescriptorString,false)
+
+        Log.d("Utils","binary: ${binary.length}")
+        val mapDescriptor = ArrayList<Char>()
+        for (i in 0 until binary.length){
+            if(binary[i].equals('1')){
+                mapDescriptor.add('2')
+            }else{
+                mapDescriptor.add(binary[i])
+            }
+
+        }
+
+        return mapDescriptor
+
+    }
 
 }

@@ -49,10 +49,19 @@
                     />
 
 
+            <TextView
+                    android:id="@+id/text_message_received"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="No text received"
+                    app:layout_constraintTop_toBottomOf="@id/xAxis"
+                    app:layout_constraintLeft_toLeftOf="parent"
+                    app:layout_constraintRight_toRightOf="parent"/>
+
             <androidx.constraintlayout.widget.ConstraintLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    app:layout_constraintTop_toBottomOf="@id/xAxis"
+                    app:layout_constraintTop_toBottomOf="@id/text_message_received"
                     app:layout_constraintLeft_toLeftOf="parent"
                     app:layout_constraintRight_toRightOf="parent"
                     app:layout_constraintBottom_toBottomOf="parent">
@@ -68,19 +77,20 @@
                         app:layout_constraintBottom_toBottomOf="parent">
 
                     <TextView
-                            android:id="@+id/text_message_received"
+                            android:id="@+id/text_robot_status"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="No text received"
+                            android:text="Robot Status"
                             app:layout_constraintTop_toTopOf="parent"
-                            app:layout_constraintLeft_toLeftOf="parent" />
+                            app:layout_constraintLeft_toLeftOf="parent"
+                            app:layout_constraintRight_toRightOf="parent"/>
 
                     <Button
                             android:text="Exploration"
                             android:id="@+id/button_exploration"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            app:layout_constraintTop_toBottomOf="@id/text_message_received"
+                            app:layout_constraintTop_toBottomOf="@id/text_robot_status"
                             app:layout_constraintLeft_toLeftOf="parent"
                             app:layout_constraintRight_toRightOf="parent"/>
 
@@ -93,21 +103,12 @@
                             app:layout_constraintLeft_toLeftOf="parent"
                             app:layout_constraintRight_toRightOf="parent"/>
 
-                    <Button
-                            android:text="Update Map"
-                            android:id="@+id/button_update_map"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:visibility="gone"
-                            app:layout_constraintTop_toBottomOf="@id/button_fastest_path"
-                            app:layout_constraintLeft_toLeftOf="parent"
-                            app:layout_constraintRight_toRightOf="parent"/>
 
                     <Button
                             android:id="@+id/button_function_1"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            app:layout_constraintTop_toBottomOf="@id/button_update_map"
+                            app:layout_constraintTop_toBottomOf="@id/button_fastest_path"
                             app:layout_constraintLeft_toLeftOf="parent"
                             app:layout_constraintRight_toRightOf="parent"
                             android:text="Function 1"/>
@@ -134,14 +135,24 @@
                         app:layout_constraintBottom_toBottomOf="parent">
 
                     <Button
+                            android:id="@+id/button_update_map"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Update Map"
+                            android:visibility="gone"
+                            app:layout_constraintTop_toTopOf="parent"
+                            app:layout_constraintLeft_toLeftOf="parent"
+                            app:layout_constraintRight_toRightOf="parent"/>
+
+
+                    <Button
                             android:id="@+id/button_up"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Up"
-                            app:layout_constraintTop_toTopOf="parent"
+                            app:layout_constraintTop_toBottomOf="@id/button_update_map"
                             app:layout_constraintLeft_toLeftOf="parent"
-                            app:layout_constraintRight_toRightOf="parent"
-                            />
+                            app:layout_constraintRight_toRightOf="parent" />
 
                     <androidx.constraintlayout.widget.ConstraintLayout
                             android:id="@+id/layout_left_right_buttons"

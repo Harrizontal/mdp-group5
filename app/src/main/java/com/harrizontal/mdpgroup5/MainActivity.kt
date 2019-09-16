@@ -19,6 +19,9 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.beust.klaxon.JsonObject
+import com.beust.klaxon.KlaxonException
+import com.beust.klaxon.Parser
 import com.harrizontal.mdpgroup5.adapter.*
 import com.harrizontal.mdpgroup5.constants.ActivityConstants
 import com.harrizontal.mdpgroup5.constants.ActivityConstants.Companion.REQUEST_START_COORDINATE
@@ -41,9 +44,17 @@ class MainActivity : AppCompatActivity() {
     private lateinit var bluetoothAdapter: BluetoothAdapter
 
     private var mMapDescriptor: ArrayList<Char> = ArrayList()
-    private val startArea: ArrayList<Int> = MDPConstants.DEFAULT_START_AREA
-    private val goalArea: ArrayList<Int> = MDPConstants.DEFAULT_END_AREA
+    // actual code
+//    private val startArea: ArrayList<Int> = MDPConstants.DEFAULT_START_AREA
+//    private val goalArea: ArrayList<Int> = MDPConstants.DEFAULT_END_AREA
     private var robotPositions: ArrayList<Pair<Int,Pair<Char,Boolean>>> = MDPConstants.DEFAULT_ROBOT_POSITION
+    private var wayPoint: ArrayList<Int> = ArrayList() // only store one wayPoint
+
+    // delete this once clear checklist
+    private val startArea: ArrayList<Int> = ArrayList()
+    private val goalArea: ArrayList<Int> = ArrayList()
+    private var updateMap: Boolean = false
+
 
     private lateinit var sharedPref: SharedPreferences
     private lateinit var mazeAdapter: MazeAdapter
@@ -88,7 +99,7 @@ class MainActivity : AppCompatActivity() {
         // maze
         val recycleViewMaze = findViewById<RecyclerView>(R.id.recyclerview_maze)
         val gridLayoutManager = GridLayoutManager(this,MDPConstants.NUM_COLUMNS)
-        mazeAdapter = MazeAdapter(this,MDPConstants.NUM_ROWS,MDPConstants.NUM_COLUMNS,mMapDescriptor,startArea,goalArea,robotPositions)
+        mazeAdapter = MazeAdapter(this,MDPConstants.NUM_ROWS,MDPConstants.NUM_COLUMNS,mMapDescriptor,startArea,goalArea,robotPositions,wayPoint)
         recycleViewMaze.layoutManager = gridLayoutManager
         recycleViewMaze.adapter = mazeAdapter
 
@@ -114,6 +125,24 @@ class MainActivity : AppCompatActivity() {
             sendMessageToBluetooth("alg:fast")
         }
 
+        button_function_1.setOnClickListener {
+            val sharedPref: SharedPreferences = getSharedPreferences(SharedPreferenceConstants.SHARED_PREF_MDP, Context.MODE_PRIVATE)
+            val message = sharedPref.getString(
+                SHARED_PREF_FUNCTION_1,
+                DEFAULT_VALUE_FUNCTION_1
+            )
+            sendMessageToBluetooth(message)
+        }
+
+        button_function_2.setOnClickListener {
+            val sharedPref: SharedPreferences = getSharedPreferences(SharedPreferenceConstants.SHARED_PREF_MDP, Context.MODE_PRIVATE)
+            val message = sharedPref.getString(
+                SHARED_PREF_FUNCTION_2,
+                DEFAULT_VALUE_FUNCTION_2
+            )
+            sendMessageToBluetooth(message)
+        }
+
 
         initializeUpdateMap()
 
@@ -134,12 +163,18 @@ class MainActivity : AppCompatActivity() {
             button_update_map.apply{
                 visibility = View.VISIBLE
                 setOnClickListener {
-                    Log.d("MainActivity","Update Map")
-                    val sharedPrefMapUpdate = sharedPref.getBoolean(SHARED_PREF_MAP_UPDATE,DEFAULT_VALUE_MAP_UPDATE)
-                    if(!sharedPrefMapUpdate){
-                        Log.d("MA","Map updated");
-                        mazeAdapter.notifyDataSetChanged()
-                    }
+                    Log.d("MainActivity","Updating Map manually")
+                    // actual code
+//                    val sharedPrefMapUpdate = sharedPref.getBoolean(SHARED_PREF_MAP_UPDATE,DEFAULT_VALUE_MAP_UPDATE)
+//                    if(!sharedPrefMapUpdate){
+//                        Log.d("MA","Map updated")
+//                        mazeAdapter.notifyDataSetChanged()
+//                    }
+
+                    // for clearing checklist
+                    updateMap = true
+                    sendMessageToBluetooth("sendArena")
+
                 }
             }
         }else{
@@ -181,11 +216,12 @@ class MainActivity : AppCompatActivity() {
                     if(retryConnectionSecond < 0){
                         supportActionBar?.setSubtitle("Attempting connection...")
                     }else{
-                        supportActionBar?.setSubtitle("Retrying connection in $retryConnectionSecond")
+                        supportActionBar?.setSubtitle("Attempting connection in $retryConnectionSecond")
                     }
                     retryConnectionSecond--
                 }
             }
+            // if the previous state and the current state is the same, reset the connection second to 3.
             if(connectionStatus.equals(previousBluetoothState)){
                 retryConnectionSecond = 3
             }
@@ -200,29 +236,68 @@ class MainActivity : AppCompatActivity() {
             val message = intent!!.getStringExtra("IncomingMessage")
             Log.d("MainActivity","Received some message: ${message}")
 
-            val messageParts = message.split(":")
+            // for clearing checklist
+            val parser: Parser = Parser.default()
 
+            try {
+                val stringBuilder: StringBuilder = StringBuilder(message)
+                val json = parser.parse(stringBuilder) as JsonObject
+                // grid
+                if(!(json.string("grid").isNullOrEmpty())){
+                    val grid = json.string("grid")
+                    val mapDescriptor = Utils().getMapDescriptorsToMapRecycleFormat2(grid!!)
 
+                    val sharedPrefMapUpdate = sharedPref.getBoolean(SHARED_PREF_MAP_UPDATE,DEFAULT_VALUE_MAP_UPDATE)
+                    if(sharedPrefMapUpdate || updateMap){
+                        // updates the 2d arena map with robot positions and map descriptor (unexplored, explored, obstacle)
+                        mMapDescriptor.clear()
+                        mMapDescriptor.addAll(mapDescriptor)
+                        mazeAdapter.notifyDataSetChanged()
+                        updateMap = false
+                    }
 
-            when(messageParts[0]){
-                "map"->{
-                    mMapDescriptor.clear()
-                    mMapDescriptor.addAll(Utils().getMapDescriptorsToMapRecycleFormat(messageParts[1]))
                 }
-                "pos"->{
-                    robotPositions.clear()
-                    robotPositions.addAll(Utils().getRobotPositions(messageParts[1]))
+
+                if(!(json.array<Int>("robotPosition").isNullOrEmpty())){
+
                 }
+
+                if(!(json.string("status").isNullOrEmpty())){
+                    val textMessageReceived = findViewById<TextView>(R.id.text_robot_status)
+                    val status = json.string("status")
+                    textMessageReceived.text = "Robot status: $status"
+                }
+            }catch (e: KlaxonException){
+
             }
 
-            val sharedPrefMapUpdate = sharedPref.getBoolean(SHARED_PREF_MAP_UPDATE,DEFAULT_VALUE_MAP_UPDATE)
-            if(sharedPrefMapUpdate){
-                // updates the 2d arena map with robot positions and map descriptor (unexplored, explored, obstacle)
-                mazeAdapter.notifyDataSetChanged()
-            }
+
+            // end of for clearing checklist
+
+            // actual code
+//            val messageParts = message.split(":")
+//
+//            when(messageParts[0]){
+//                "map"->{
+//                    mMapDescriptor.clear()
+//                    mMapDescriptor.addAll(Utils().getMapDescriptorsToMapRecycleFormat(messageParts[1]))
+//                }
+//                "pos"->{
+//                    robotPositions.clear()
+//                    robotPositions.addAll(Utils().getRobotPositions(messageParts[1]))
+//                }
+//            }
+//
+//            val sharedPrefMapUpdate = sharedPref.getBoolean(SHARED_PREF_MAP_UPDATE,DEFAULT_VALUE_MAP_UPDATE)
+//            if(sharedPrefMapUpdate){
+//                // updates the 2d arena map with robot positions and map descriptor (unexplored, explored, obstacle)
+//                mazeAdapter.notifyDataSetChanged()
+//            }
+
+
 
             val textMessageReceived = findViewById<TextView>(R.id.text_message_received)
-            textMessageReceived.text = message
+            textMessageReceived.text = "Receive: $message"
         }
     }
 
@@ -388,15 +463,21 @@ class MainActivity : AppCompatActivity() {
 
                     when(requestType){
                         REQUEST_WAYPOINT -> {
-                            sendMessageToBluetooth("alg:swp,$")
+                            val id = Utils().convertCoordinatesToGridId(xCord!!.toInt(),yCord!!.toInt())
+                            wayPoint.clear()
+                            wayPoint.add(id)
+                            mazeAdapter.notifyDataSetChanged()
+                            sendMessageToBluetooth("alg:swp,$xCord,$yCord")
                         }
                         REQUEST_START_COORDINATE -> {
-                            sendMessageToBluetooth("alg:start,")
-                            val robotPositionsString = xCord+","+yCord+",n" // hardcode to norith first
-                            Log.d("MainActivity","before robotPositions: $robotPositions")
+                            val newCoordinates = Utils().recalculateMiddleRobotPosition(xCord!!.toInt(),yCord!!.toInt())
+                            // for clearing checklist
+                            sendMessageToBluetooth("alg:start,$xCord,$yCord")
+                            // actual code
+                            //sendMessageToBluetooth("alg:start,${newCoordinates.first},${newCoordinates.second}")
+                            val robotPositionsString = "${newCoordinates.first},${newCoordinates.second},n" // hardcode to north first
                             robotPositions.clear()
                             robotPositions.addAll(Utils().getRobotPositions(robotPositionsString))
-                            Log.d("MainActivity","after robotPositions: $robotPositions")
                             mazeAdapter.notifyDataSetChanged() // update the arena map
                         }
                     }

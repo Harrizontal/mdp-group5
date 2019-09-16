@@ -26,7 +26,8 @@ class MazeAdapter(
     private var mapDescriptor: ArrayList<Char>,
     private var startArea: ArrayList<Int>, // ArrayList of start and end position
     private var goalArea: ArrayList<Int>,
-    private var robotPositions: ArrayList<Pair<Int,Pair<Char,Boolean>>>
+    private var robotPositions: ArrayList<Pair<Int,Pair<Char,Boolean>>>,
+    private var wayPoint: ArrayList<Int>
 ): RecyclerView.Adapter<MazeAdapter.MazeHolder>() {
     private val mItems: IntArray
 
@@ -95,10 +96,18 @@ class MazeAdapter(
             }
         }
 
+        // setting up waypoint
+        if(wayPoint.size != 0){
+            if(position == wayPoint.get(0)){
+                Log.d("MazeAdapter","Waypoint detected")
+                holder.itemView.image_waypoint.setBackgroundColor(context.resources.getColor(R.color.colorWayPoint))
+            }
+        }
+
+
+        // set text with coordinates and set clicklistener to grid
         val grid = mItems.get(position)
         holder.itemView.textView.text = xCoord.toString() + "," + yCoord.toString()
-
-
         holder.itemView.setOnClickListener {
             Log.d("MazeAdapter","grid id: $grid")
             val intent = Intent(context, SelectCoordinateActivity::class.java)
