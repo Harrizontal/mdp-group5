@@ -17,21 +17,25 @@ import com.google.android.material.switchmaterial.SwitchMaterial
 import com.harrizontal.mdpgroup5.constants.SharedPreferenceConstants.Companion.DEFAULT_VALUE_FUNCTION_1
 import com.harrizontal.mdpgroup5.constants.SharedPreferenceConstants.Companion.DEFAULT_VALUE_FUNCTION_2
 import com.harrizontal.mdpgroup5.constants.SharedPreferenceConstants.Companion.DEFAULT_VALUE_MAP_UPDATE
+import com.harrizontal.mdpgroup5.constants.SharedPreferenceConstants.Companion.DEFAULT_VALUE_TILT
 import com.harrizontal.mdpgroup5.constants.SharedPreferenceConstants.Companion.SHARED_PREF_FUNCTION_1
 import com.harrizontal.mdpgroup5.constants.SharedPreferenceConstants.Companion.SHARED_PREF_FUNCTION_2
 import com.harrizontal.mdpgroup5.constants.SharedPreferenceConstants.Companion.SHARED_PREF_MAP_UPDATE
 import com.harrizontal.mdpgroup5.constants.SharedPreferenceConstants.Companion.SHARED_PREF_MDP
+import com.harrizontal.mdpgroup5.constants.SharedPreferenceConstants.Companion.SHARED_PREF_TILT_MECHANISM
 
 
 class SettingsActivity : AppCompatActivity() {
 
     private lateinit var textFunction1: TextView
     private lateinit var textFunction2: TextView
+    private lateinit var newIntent: Intent
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
 
+        newIntent = Intent()
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         initalizeSettings()
@@ -43,6 +47,7 @@ class SettingsActivity : AppCompatActivity() {
 
 
         val sharedPrefMapUpdate = sharedPref.getBoolean(SHARED_PREF_MAP_UPDATE,DEFAULT_VALUE_MAP_UPDATE)
+        val sharedPrefTilt = sharedPref.getBoolean(SHARED_PREF_TILT_MECHANISM,DEFAULT_VALUE_TILT)
         val sharedPrefFunction1 = sharedPref.getString(SHARED_PREF_FUNCTION_1,
             DEFAULT_VALUE_FUNCTION_1)
         val sharedPrefFunction2 = sharedPref.getString(SHARED_PREF_FUNCTION_2,DEFAULT_VALUE_FUNCTION_2)
@@ -56,9 +61,8 @@ class SettingsActivity : AppCompatActivity() {
         val mapUpdateSwitch = findViewById<SwitchMaterial>(R.id.switch_map_update).apply {
             isChecked = sharedPrefMapUpdate
             setOnCheckedChangeListener { buttonView, isChecked ->
-                val intent = Intent()
-                intent.putExtra("SHOW_MAP_UPDATE_BUTTON",isChecked)
-                setResult(Activity.RESULT_OK,intent)
+                newIntent.putExtra("SHOW_MAP_UPDATE_BUTTON",isChecked)
+                setResult(Activity.RESULT_OK,newIntent)
 
                 val editor = sharedPref.edit()
                 editor.putBoolean(SHARED_PREF_MAP_UPDATE,isChecked)
@@ -76,6 +80,20 @@ class SettingsActivity : AppCompatActivity() {
             showDialogBox("Function 2","Edit command of function 2",SHARED_PREF_FUNCTION_2,DEFAULT_VALUE_FUNCTION_2,textFunction2)
         }
 
+        val tiltMechanismSwitch = findViewById<SwitchMaterial>(R.id.switch_tilt).apply{
+            isChecked = sharedPrefTilt
+            setOnCheckedChangeListener{ buttonView, isChecked ->
+                newIntent.putExtra("ENABLE_TILT",isChecked)
+                setResult(Activity.RESULT_OK,newIntent)
+                val editor = sharedPref.edit()
+                editor.putBoolean(SHARED_PREF_TILT_MECHANISM,isChecked)
+                editor.apply()
+            }
+        }
+
+        newIntent.putExtra("SHOW_MAP_UPDATE_BUTTON",mapUpdateSwitch.isChecked)
+        newIntent.putExtra("ENABLE_TILT",tiltMechanismSwitch.isChecked)
+        setResult(Activity.RESULT_OK,newIntent)
 
     }
 

@@ -11,6 +11,10 @@ import androidx.core.content.ContextCompat
 import kotlinx.android.synthetic.main.activity_main.*
 import android.app.Activity
 import android.content.*
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.os.IBinder
 import android.view.Menu
 import android.view.MenuItem
@@ -38,21 +42,28 @@ import com.harrizontal.mdpgroup5.constants.SharedPreferenceConstants.Companion.S
 import com.harrizontal.mdpgroup5.helper.Utils
 import com.harrizontal.mdpgroup5.service.BService
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), SensorEventListener {
+
 
 
     private lateinit var bluetoothAdapter: BluetoothAdapter
 
     private var mMapDescriptor: ArrayList<Char> = ArrayList()
     // actual code
-//    private val startArea: ArrayList<Int> = MDPConstants.DEFAULT_START_AREA
-//    private val goalArea: ArrayList<Int> = MDPConstants.DEFAULT_END_AREA
+    private val startArea: ArrayList<Int> = MDPConstants.DEFAULT_START_AREA
+    private val goalArea: ArrayList<Int> = MDPConstants.DEFAULT_END_AREA
     private var robotPositions: ArrayList<Pair<Int,Pair<Char,Boolean>>> = MDPConstants.DEFAULT_ROBOT_POSITION
-    private var wayPoint: ArrayList<Int> = ArrayList() // only store one wayPoint
+    private var wayPointPosition: ArrayList<Int> = ArrayList() // only store one wayPointPosition
+    private var imagePositions: ArrayList<Pair<Int,Int>> = ArrayList()
+
+    // for tilt mechanism
+    private lateinit var sensorManager: SensorManager
+    private var sensor: Sensor? = null
+    private var enableTilt: Boolean = false
 
     // delete this once clear checklist
-    private val startArea: ArrayList<Int> = ArrayList()
-    private val goalArea: ArrayList<Int> = ArrayList()
+//    private val startArea: ArrayList<Int> = ArrayList()
+//    private val goalArea: ArrayList<Int> = ArrayList()
     private var updateMap: Boolean = false
 
 
@@ -74,8 +85,6 @@ class MainActivity : AppCompatActivity() {
 
         sharedPref = getSharedPreferences(
             SharedPreferenceConstants.SHARED_PREF_MDP, Context.MODE_PRIVATE)
-
-
 
         mMapDescriptor = Utils().convertMapDescriptor1ToMapRecycleFormat(MDPConstants.DEFAULT_MAP_DESCRIPTOR_STRING)
 
@@ -99,10 +108,20 @@ class MainActivity : AppCompatActivity() {
         // maze
         val recycleViewMaze = findViewById<RecyclerView>(R.id.recyclerview_maze)
         val gridLayoutManager = GridLayoutManager(this,MDPConstants.NUM_COLUMNS)
-        mazeAdapter = MazeAdapter(this,MDPConstants.NUM_ROWS,MDPConstants.NUM_COLUMNS,mMapDescriptor,startArea,goalArea,robotPositions,wayPoint)
+        mazeAdapter = MazeAdapter(this,MDPConstants.NUM_ROWS,MDPConstants.NUM_COLUMNS,mMapDescriptor,startArea,goalArea,robotPositions,wayPointPosition,imagePositions)
         recycleViewMaze.layoutManager = gridLayoutManager
         recycleViewMaze.adapter = mazeAdapter
 
+        sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
+
+        if (sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null) {
+            Log.d("MainActivity","Sensor detected")
+            sensor = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+            Toast.makeText(applicationContext,"Sensor detected",Toast.LENGTH_SHORT).show()
+        } else {
+            Log.d("MainActivity","Sensor not detected")
+            Toast.makeText(applicationContext,"No sensor",Toast.LENGTH_SHORT).show()
+        }
 
 
         button_turnleft.setOnClickListener {
@@ -147,6 +166,8 @@ class MainActivity : AppCompatActivity() {
         initializeUpdateMap()
 
         initDiscoverBluetooth()
+
+        initializeTilt()
     }
 
     /**
@@ -165,16 +186,15 @@ class MainActivity : AppCompatActivity() {
                 setOnClickListener {
                     Log.d("MainActivity","Updating Map manually")
                     // actual code
-//                    val sharedPrefMapUpdate = sharedPref.getBoolean(SHARED_PREF_MAP_UPDATE,DEFAULT_VALUE_MAP_UPDATE)
-//                    if(!sharedPrefMapUpdate){
-//                        Log.d("MA","Map updated")
-//                        mazeAdapter.notifyDataSetChanged()
-//                    }
+                    val sharedPrefMapUpdate = sharedPref.getBoolean(SHARED_PREF_MAP_UPDATE,DEFAULT_VALUE_MAP_UPDATE)
+                    if(!sharedPrefMapUpdate){
+                        Log.d("MA","Map updated")
+                        mazeAdapter.notifyDataSetChanged()
+                    }
 
                     // for clearing checklist
-                    updateMap = true
-                    sendMessageToBluetooth("sendArena")
-
+//                    updateMap = true
+//                    sendMessageToBluetooth("sendArena")
                 }
             }
         }else{
@@ -184,6 +204,15 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun initializeTilt(){
+        val sharedPref: SharedPreferences = getSharedPreferences(SharedPreferenceConstants.SHARED_PREF_MDP, Context.MODE_PRIVATE)
+        val sharedPrefTilt = sharedPref.getBoolean(
+            SharedPreferenceConstants.SHARED_PREF_TILT_MECHANISM,
+            SharedPreferenceConstants.DEFAULT_VALUE_TILT
+        )
+        Log.d("MainActivity","Intialize tilt: $sharedPrefTilt")
+        enableTilt = sharedPrefTilt
+    }
 
     private var retryConnectionSecond = 3
     private var previousBluetoothState: Int = BluetoothConstants.STATE_NONE
@@ -259,7 +288,15 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 if(!(json.array<Int>("robotPosition").isNullOrEmpty())){
+                    val robotPosition = json.array<Int>("robotPosition")
 
+                    val newCoordinate = Utils().flipCoordinatesForADM(robotPosition!!.get(0),robotPosition!!.get(1))
+                    val direction = Utils().getDirection(robotPosition!!.get(2))
+
+                    //Log.d("MainActivity","Robot position received ${robotPosition!!.get(0)} - new coordinate: $newCoordinate")
+                    robotPositions.clear()
+                    robotPositions.addAll(Utils().getRobotPositions2("${newCoordinate.first},${newCoordinate.second},$direction"))
+                    mazeAdapter.notifyDataSetChanged()
                 }
 
                 if(!(json.string("status").isNullOrEmpty())){
@@ -268,7 +305,30 @@ class MainActivity : AppCompatActivity() {
                     textMessageReceived.text = "Robot status: $status"
                 }
             }catch (e: KlaxonException){
+                val messageParts = message.split(":")
 
+                when(messageParts[0]){
+                    "map"->{
+                        mMapDescriptor.clear()
+                        mMapDescriptor.addAll(Utils().getMapDescriptorsToMapRecycleFormat(messageParts[1]))
+                    }
+                    "pos"->{
+                        robotPositions.clear()
+                        robotPositions.addAll(Utils().getRobotPositions(messageParts[1]))
+                    }
+                    "img"->{
+                        val imagePositionAndId = Utils().getImagePosition(messageParts[1])
+                        if(imagePositionAndId != null){
+                            imagePositions.add(imagePositionAndId)
+                        }
+
+                    }
+                }
+                val sharedPrefMapUpdate = sharedPref.getBoolean(SHARED_PREF_MAP_UPDATE,DEFAULT_VALUE_MAP_UPDATE)
+                if(sharedPrefMapUpdate){
+                    // updates the 2d arena map with robot positions and map descriptor (unexplored, explored, obstacle)
+                    mazeAdapter.notifyDataSetChanged()
+                }
             }
 
 
@@ -293,6 +353,8 @@ class MainActivity : AppCompatActivity() {
 //                // updates the 2d arena map with robot positions and map descriptor (unexplored, explored, obstacle)
 //                mazeAdapter.notifyDataSetChanged()
 //            }
+
+            // end of actual code
 
 
 
@@ -361,6 +423,9 @@ class MainActivity : AppCompatActivity() {
     override fun onResume() {
         Log.d("MA","onResume")
         super.onResume()
+        sensor?.also { it ->
+            sensorManager.registerListener(this, it, SensorManager.SENSOR_DELAY_NORMAL)
+        }
     }
 
 
@@ -432,6 +497,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onPause() {
+        super.onPause()
+        sensorManager.unregisterListener(this)
+    }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
@@ -464,8 +533,8 @@ class MainActivity : AppCompatActivity() {
                     when(requestType){
                         REQUEST_WAYPOINT -> {
                             val id = Utils().convertCoordinatesToGridId(xCord!!.toInt(),yCord!!.toInt())
-                            wayPoint.clear()
-                            wayPoint.add(id)
+                            wayPointPosition.clear()
+                            wayPointPosition.add(id)
                             mazeAdapter.notifyDataSetChanged()
                             sendMessageToBluetooth("alg:swp,$xCord,$yCord")
                         }
@@ -498,12 +567,55 @@ class MainActivity : AppCompatActivity() {
                 Log.d("MA","Request settings")
                 if (resultCode == Activity.RESULT_OK){
                     val showMap = data?.extras?.getBoolean("SHOW_MAP_UPDATE_BUTTON")
-                    Log.d("MA","requestCode: $requestCode, resultCode: $resultCode, showMap: $showMap")
+                    val tilt = data?.extras?.getBoolean("ENABLE_TILT")
+                    if(tilt == false){
+                        enableTilt = false
+                    }else{
+                        enableTilt = true
+                    }
+                    Log.d("MainActivity","Result - showMap: $showMap, enableTilt: $tilt")
                     initializeUpdateMap()
                 }
             }
         }
     }
 
+
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+
+    }
+
+    override fun onSensorChanged(event: SensorEvent?) {
+        val x = event!!.values[0]
+        val y = event!!.values[1]
+
+        //Log.d("onSensorChanged","enableTilt: $enableTilt")
+        if(enableTilt) {
+            if (Math.abs(x) > Math.abs(y)) {
+                // Right Tilt
+                if (x < 0) {
+                    Log.d("MainActivity:", "RIGHT TILT")
+                    sendMessageToBluetooth("mov:right,1")
+                }
+
+                // Left Tilt
+                if (x > 0) {
+                    Log.d("MainActivity:", "LEFT TILT")
+                    sendMessageToBluetooth("mov:left,1")
+                }
+            } else {
+                // Forward Tilt
+                if (y < 0) {
+                    Log.d("MainActivity:", "FORWARD TILT")
+                    sendMessageToBluetooth("mov:forward,1")
+                }
+
+                // Backward Tilt
+                if (y > 0) {
+                    //Log.d("MainActivity:", "DOWN TILT!!")
+                }
+            }
+        }
+    }
 
 }

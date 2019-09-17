@@ -27,7 +27,8 @@ class MazeAdapter(
     private var startArea: ArrayList<Int>, // ArrayList of start and end position
     private var goalArea: ArrayList<Int>,
     private var robotPositions: ArrayList<Pair<Int,Pair<Char,Boolean>>>,
-    private var wayPoint: ArrayList<Int>
+    private var wayPointPosition: ArrayList<Int>,
+    private var imagePositions: ArrayList<Pair<Int,Int>>
 ): RecyclerView.Adapter<MazeAdapter.MazeHolder>() {
     private val mItems: IntArray
 
@@ -97,11 +98,21 @@ class MazeAdapter(
         }
 
         // setting up waypoint
-        if(wayPoint.size != 0){
-            if(position == wayPoint.get(0)){
+        if(wayPointPosition.size != 0){
+            if(position == wayPointPosition.get(0)){
                 Log.d("MazeAdapter","Waypoint detected")
                 holder.itemView.image_waypoint.setBackgroundColor(context.resources.getColor(R.color.colorWayPoint))
             }
+        }
+
+        if(imagePositions.size > 0){
+            for (i in 0 until imagePositions.size){
+                if(position == imagePositions.get(i).first){
+                    holder.itemView.text_image_recog_id.text = imagePositions.get(i).second.toString()
+                    holder.itemView.setBackgroundResource(R.drawable.cell_item_obstacle)
+                }
+            }
+
         }
 
 
