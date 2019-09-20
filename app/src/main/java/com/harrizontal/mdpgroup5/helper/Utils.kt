@@ -2,6 +2,7 @@ package com.harrizontal.mdpgroup5.helper
 
 import android.util.Log
 import com.harrizontal.mdpgroup5.constants.MDPConstants
+import java.lang.Double.parseDouble
 import java.math.BigInteger
 
 
@@ -187,6 +188,13 @@ class Utils {
         val parts = imageCoordinateString.split(",")
 
         val imageCoordinate = Utils().convertCoordinatesToGridId(parts[0].toInt(),parts[1].toInt())
+
+        try {
+            val num = parseDouble(parts[2])
+        } catch (e: NumberFormatException) {
+            return null
+        }
+
 
         if (parts[2].toInt() == -1){
             // means no image detected at all.

@@ -278,6 +278,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
                     val sharedPrefMapUpdate = sharedPref.getBoolean(SHARED_PREF_MAP_UPDATE,DEFAULT_VALUE_MAP_UPDATE)
                     if(sharedPrefMapUpdate || updateMap){
+                        Log.d("MainActivity","Updating map")
                         // updates the 2d arena map with robot positions and map descriptor (unexplored, explored, obstacle)
                         mMapDescriptor.clear()
                         mMapDescriptor.addAll(mapDescriptor)

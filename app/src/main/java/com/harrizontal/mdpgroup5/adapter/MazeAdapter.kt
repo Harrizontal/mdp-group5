@@ -105,15 +105,30 @@ class MazeAdapter(
             }
         }
 
+        val obstacle = context.resources.getDrawable(R.drawable.cell_item_obstacle)
         if(imagePositions.size > 0){
             for (i in 0 until imagePositions.size){
                 if(position == imagePositions.get(i).first){
-                    holder.itemView.text_image_recog_id.text = imagePositions.get(i).second.toString()
-                    holder.itemView.setBackgroundResource(R.drawable.cell_item_obstacle)
+//                    for (k in 0 until mapDescriptor.size){
+//                        if(position == )
+//                    }
+                    if(holder.itemView.background.constantState == obstacle.constantState){
+                        if(imagePositions.get(i).second > 0 && imagePositions.get(i).second < 16){
+                            holder.itemView.text_image_recog_id.text = imagePositions.get(i).second.toString()
+                            holder.itemView.setBackgroundResource(R.drawable.cell_item_obstacle)
+                        }
+                    }else{
+                        Log.d("mazeADAPTER","asdasd")
+                        Log.d("mazeADAPTER","asd: "+holder.itemView.background.constantState +"=/="+obstacle.constantState)
+                    }
                 }
             }
 
         }
+
+
+
+        //Log.d("MazeAdapter","test: "+holder.itemView.resources)
 
 
         // set text with coordinates and set clicklistener to grid
