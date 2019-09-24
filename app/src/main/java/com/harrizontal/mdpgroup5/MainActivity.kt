@@ -8,7 +8,6 @@ import android.os.Bundle
 import android.util.Log
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import kotlinx.android.synthetic.main.activity_main.*
 import android.app.Activity
 import android.content.*
 import android.hardware.Sensor
@@ -23,9 +22,6 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.beust.klaxon.JsonObject
-import com.beust.klaxon.KlaxonException
-import com.beust.klaxon.Parser
 import com.harrizontal.mdpgroup5.adapter.*
 import com.harrizontal.mdpgroup5.constants.ActivityConstants
 import com.harrizontal.mdpgroup5.constants.ActivityConstants.Companion.REQUEST_START_COORDINATE
@@ -41,6 +37,7 @@ import com.harrizontal.mdpgroup5.constants.SharedPreferenceConstants.Companion.S
 import com.harrizontal.mdpgroup5.constants.SharedPreferenceConstants.Companion.SHARED_PREF_MAP_UPDATE
 import com.harrizontal.mdpgroup5.helper.Utils
 import com.harrizontal.mdpgroup5.service.BService
+import kotlinx.android.synthetic.main.activity_main_2.*
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
 
@@ -76,7 +73,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        setContentView(R.layout.activity_main_2)
 
         supportActionBar?.setSubtitle("Not connected")
 
@@ -109,6 +106,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         val recycleViewMaze = findViewById<RecyclerView>(R.id.recyclerview_maze)
         val gridLayoutManager = GridLayoutManager(this,MDPConstants.NUM_COLUMNS)
         mazeAdapter = MazeAdapter(this,MDPConstants.NUM_ROWS,MDPConstants.NUM_COLUMNS,mMapDescriptor,startArea,goalArea,robotPositions,wayPointPosition,imagePositions)
+        recycleViewMaze.addItemDecoration(SpacesItemDecoration(0))
         recycleViewMaze.layoutManager = gridLayoutManager
         recycleViewMaze.adapter = mazeAdapter
 
@@ -122,7 +120,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             Log.d("MainActivity","Sensor not detected")
             Toast.makeText(applicationContext,"No sensor",Toast.LENGTH_SHORT).show()
         }
-
 
         button_turnleft.setOnClickListener {
             sendMessageToBluetooth("mov:left,1")

@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.graphics.PorterDuff
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -15,8 +16,10 @@ import com.harrizontal.mdpgroup5.constants.MDPConstants
 import kotlinx.android.synthetic.main.list_item_grid_box.view.*
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
+import android.graphics.drawable.Drawable
+import androidx.appcompat.content.res.AppCompatResources
+import androidx.core.graphics.drawable.DrawableCompat
 import com.harrizontal.mdpgroup5.R
-import android.graphics.PorterDuff
 
 
 class MazeAdapter(
@@ -151,6 +154,7 @@ class MazeAdapter(
      * Generate robot body and robot head for 2D Arena
      */
     private fun generateRobotPart(robotPart: Char, itemView: View,isHead: Boolean){
+        var unwrappedDrawable: Drawable? = AppCompatResources.getDrawable(context,R.drawable.cell_robot_bottomleft)
         val set = ConstraintSet()
         val layout: ConstraintLayout = itemView.findViewById(R.id.layout_grid) as ConstraintLayout
         set.clone(layout)
@@ -160,12 +164,13 @@ class MazeAdapter(
         set.clear(R.id.image_robot,ConstraintSet.BOTTOM)
         when(robotPart){
             MDPConstants.ROBOT_TOP_LEFT -> {
+                unwrappedDrawable = AppCompatResources.getDrawable(context,R.drawable.cell_robot_topleft)
                 itemView.image_robot.setImageDrawable(context.resources.getDrawable(R.drawable.cell_robot_topleft))
                 set.connect(R.id.image_robot,ConstraintSet.BOTTOM,ConstraintSet.PARENT_ID,ConstraintSet.BOTTOM,0)
                 set.connect(R.id.image_robot,ConstraintSet.RIGHT,ConstraintSet.PARENT_ID,ConstraintSet.RIGHT,0)
             }
             MDPConstants.ROBOT_TOP -> {
-                itemView.image_robot.setImageDrawable(context.resources.getDrawable(R.drawable.cell_robot_topbottom))
+                itemView.image_robot.setImageDrawable(context.resources.getDrawable(R.drawable.cell_robot_topbottommiddle))
                 set.connect(R.id.image_robot,ConstraintSet.BOTTOM,ConstraintSet.PARENT_ID,ConstraintSet.BOTTOM,0)
                 set.connect(R.id.image_robot,ConstraintSet.RIGHT,ConstraintSet.PARENT_ID,ConstraintSet.RIGHT,0)
                 set.connect(R.id.image_robot,ConstraintSet.LEFT,ConstraintSet.PARENT_ID,ConstraintSet.LEFT,0)
@@ -200,7 +205,7 @@ class MazeAdapter(
                 set.connect(R.id.image_robot,ConstraintSet.TOP,ConstraintSet.PARENT_ID,ConstraintSet.TOP,0)
             }
             MDPConstants.ROBOT_BOTTOM ->{
-                itemView.image_robot.setImageDrawable(context.resources.getDrawable(R.drawable.cell_robot_topbottom))
+                itemView.image_robot.setImageDrawable(context.resources.getDrawable(R.drawable.cell_robot_topbottommiddle))
                 set.connect(R.id.image_robot,ConstraintSet.LEFT,ConstraintSet.PARENT_ID,ConstraintSet.LEFT,0)
                 set.connect(R.id.image_robot,ConstraintSet.TOP,ConstraintSet.PARENT_ID,ConstraintSet.TOP,0)
                 set.connect(R.id.image_robot,ConstraintSet.RIGHT,ConstraintSet.PARENT_ID,ConstraintSet.RIGHT,0)
@@ -214,9 +219,10 @@ class MazeAdapter(
 
         //itemView.image_robot.visibility = View.VISIBLE
 
-        if(isHead){
-            itemView.image_robot.setColorFilter(Color.BLACK, PorterDuff.Mode.OVERLAY)
+        if(!isHead){
+            itemView.image_robot.setColorFilter(Color.parseColor("#003389"), PorterDuff.Mode.SRC_IN)
         }
+
 
         set.applyTo(layout)
     }
