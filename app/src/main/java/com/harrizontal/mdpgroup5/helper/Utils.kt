@@ -3,6 +3,7 @@ package com.harrizontal.mdpgroup5.helper
 import android.util.Log
 import com.harrizontal.mdpgroup5.constants.MDPConstants
 import java.lang.Double.parseDouble
+import java.lang.IndexOutOfBoundsException
 import java.math.BigInteger
 
 
@@ -17,7 +18,7 @@ class Utils {
         val testingDescriptor = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;001000200040070000000038001000000004000820107e300400000000610080200040008000"
         val testingDescriptor2 = "fffffffffffefffcfffbfff7bfef7fc0ff81ff003e007c007800f000e0008000000000000003;01c0000000000000000fc40020010000210002";
 
-        val descriptorParts = mapDescriptorString.split(";")
+        val descriptorParts = testingDescriptor2.split(";")
 
         val descriptorPartOne = descriptorParts[0]
         val descriptorPartTwo = descriptorParts[1]
@@ -189,11 +190,24 @@ class Utils {
 
         val imageCoordinate = Utils().convertCoordinatesToGridId(parts[0].toInt(),parts[1].toInt())
 
+        try{
+            val test = parts[2]
+        } catch (e: IndexOutOfBoundsException){
+            return null
+        }
+
         try {
             val num = parseDouble(parts[2])
         } catch (e: NumberFormatException) {
             return null
         }
+
+        try {
+            val test = parts[2].toInt()
+        } catch(e: java.lang.NumberFormatException){
+            return null
+        }
+
 
 
         if (parts[2].toInt() == -1){
@@ -203,84 +217,6 @@ class Utils {
             return Pair(imageCoordinate,parts[2].toInt())
         }
 
-    }
-
-
-    // similiar function as top - just to clear checklist
-    fun getRobotPositions2(robotMainPosition: String): ArrayList<Pair<Int,Pair<Char,Boolean>>>{
-        val parts = robotMainPosition.split(",")
-        val robotHeadAndBody = ArrayList<Pair<Int,Pair<Char,Boolean>>>() // stores the grid id of the calculated robot and the type (robot head/robot body)
-
-        // 3x3 robot size
-        // [body1][body2 - n][body3]
-        // [body4 - w][body5][body6 - e]
-        // [body7][body8 - s][body9]
-        // n,w,e,s is the robot direction
-        // each body have a x and y
-
-        // calculate the 1st layer of the robot
-        val x1 = parts[0].toInt()
-        val y1 = parts[1].toInt()
-        val x2 = x1 + 1
-        val y2 = y1
-        val x3 = x2 + 1
-        val y3 = y2
-
-        // calculate the 1st layer of robot
-        val x4 = x1
-        val y4 = y1 - 1
-        val x5 = x2
-        val y5 = y2 - 1
-        val x6 = x3
-        val y6 = y3 - 1
-
-        // calculate the 3rd layer of robot
-        val x7 = x4
-        val y7 = y4 - 1
-        val x8 = x5
-        val y8 = y5 - 1
-        val x9 = x6
-        val y9 = y6 - 1
-
-        // inefficient :(
-        robotHeadAndBody.add(Pair(convertCoordinatesToGridId(x1,y1),Pair(MDPConstants.ROBOT_TOP_LEFT,calculateRobotType(1,parts[2]))))
-        robotHeadAndBody.add(Pair(convertCoordinatesToGridId(x2,y2),Pair(MDPConstants.ROBOT_TOP,calculateRobotType(2,parts[2]))))
-        robotHeadAndBody.add(Pair(convertCoordinatesToGridId(x3,y3),Pair(MDPConstants.ROBOT_TOP_RIGHT,calculateRobotType(3,parts[2]))))
-        robotHeadAndBody.add(Pair(convertCoordinatesToGridId(x4,y4),Pair(MDPConstants.ROBOT_MIDDLE_LEFT,calculateRobotType(4,parts[2]))))
-        robotHeadAndBody.add(Pair(convertCoordinatesToGridId(x5,y5),Pair(MDPConstants.ROBOT_MIDDLE,calculateRobotType(5,parts[2]))))
-        robotHeadAndBody.add(Pair(convertCoordinatesToGridId(x6,y6),Pair(MDPConstants.ROBOT_MIDDLE_RIGHT,calculateRobotType(6,parts[2]))))
-        robotHeadAndBody.add(Pair(convertCoordinatesToGridId(x7,y7),Pair(MDPConstants.ROBOT_BOTTOM_LEFT,calculateRobotType(7,parts[2]))))
-        robotHeadAndBody.add(Pair(convertCoordinatesToGridId(x8,y8),Pair(MDPConstants.ROBOT_BOTTOM,calculateRobotType(8,parts[2]))))
-        robotHeadAndBody.add(Pair(convertCoordinatesToGridId(x9,y9),Pair(MDPConstants.ROBOT_BOTTOM_RIGHT,calculateRobotType(9,parts[2]))))
-
-        return robotHeadAndBody
-    }
-
-    // for checklist
-    fun flipCoordinatesForADM(xCoordinate: Int, yCoordinate: Int): Pair<Int,Int>{
-        val newYvalue = MDPConstants.NUM_ROWS - yCoordinate - 1
-        return Pair(xCoordinate,newYvalue)
-    }
-
-    // for checklist
-    fun getDirection(degree: Int): String{
-        when(degree){
-            in 0..89 -> {
-                return "n"
-            }
-            in 90..179 -> {
-                return "e"
-            }
-            in 180..269 -> {
-                return "s"
-            }
-            in 270..359 ->{
-                return "w"
-            }
-            else -> {
-                return "n"
-            }
-        }
     }
 
 
@@ -368,26 +304,6 @@ class Utils {
         }
 
         return Pair(newXValue,newYValue)
-    }
-
-    fun getMapDescriptorsToMapRecycleFormat2(mapDescriptorString: String): ArrayList<Char> {
-
-        Log.d("Utils","mapDescriptorString's length: ${mapDescriptorString.length}")
-        val binary = convertHexStringToBinaryString(mapDescriptorString,false)
-
-        Log.d("Utils","binary: ${binary.length}")
-        val mapDescriptor = ArrayList<Char>()
-        for (i in 0 until binary.length){
-            if(binary[i].equals('1')){
-                mapDescriptor.add('2')
-            }else{
-                mapDescriptor.add(binary[i])
-            }
-
-        }
-
-        return mapDescriptor
-
     }
 
 }

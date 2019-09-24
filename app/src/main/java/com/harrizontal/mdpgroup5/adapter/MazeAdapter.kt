@@ -70,7 +70,6 @@ class MazeAdapter(
         // setting up start area in map
         for (x in 0 until startArea.size){
             if(position == startArea.get(x)){
-                holder.itemView.textView.setTextColor(Color.BLUE)
                 holder.itemView.view_shaded.setBackgroundColor(context.resources.getColor(R.color.colorStartArena))
                 break
             }
@@ -79,7 +78,6 @@ class MazeAdapter(
         // setting up goal area in map
         for (x in 0 until goalArea.size){
             if(position == goalArea.get(x)){
-                holder.itemView.textView.setTextColor(Color.GREEN)
                 holder.itemView.view_shaded.setBackgroundColor(context.resources.getColor(R.color.colorGoalArena))
                 break
             }
@@ -117,19 +115,11 @@ class MazeAdapter(
                             holder.itemView.text_image_recog_id.text = imagePositions.get(i).second.toString()
                             holder.itemView.setBackgroundResource(R.drawable.cell_item_obstacle)
                         }
-                    }else{
-                        Log.d("mazeADAPTER","asdasd")
-                        Log.d("mazeADAPTER","asd: "+holder.itemView.background.constantState +"=/="+obstacle.constantState)
                     }
                 }
             }
 
         }
-
-
-
-        //Log.d("MazeAdapter","test: "+holder.itemView.resources)
-
 
         // set text with coordinates and set clicklistener to grid
         val grid = mItems.get(position)

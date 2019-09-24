@@ -144,24 +144,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             sendMessageToBluetooth("alg:fast")
         }
 
-        button_function_1.setOnClickListener {
-            val sharedPref: SharedPreferences = getSharedPreferences(SharedPreferenceConstants.SHARED_PREF_MDP, Context.MODE_PRIVATE)
-            val message = sharedPref.getString(
-                SHARED_PREF_FUNCTION_1,
-                DEFAULT_VALUE_FUNCTION_1
-            )
-            sendMessageToBluetooth(message)
-        }
-
-        button_function_2.setOnClickListener {
-            val sharedPref: SharedPreferences = getSharedPreferences(SharedPreferenceConstants.SHARED_PREF_MDP, Context.MODE_PRIVATE)
-            val message = sharedPref.getString(
-                SHARED_PREF_FUNCTION_2,
-                DEFAULT_VALUE_FUNCTION_2
-            )
-            sendMessageToBluetooth(message)
-        }
-
 
         initializeUpdateMap()
 
@@ -265,99 +247,30 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             val message = intent!!.getStringExtra("IncomingMessage")
             Log.d("MainActivity","Received some message: ${message}")
 
-            // for clearing checklist
-            val parser: Parser = Parser.default()
+            val messageParts = message.split(":")
 
-            try {
-                val stringBuilder: StringBuilder = StringBuilder(message)
-                val json = parser.parse(stringBuilder) as JsonObject
-                // grid
-                if(!(json.string("grid").isNullOrEmpty())){
-                    val grid = json.string("grid")
-                    val mapDescriptor = Utils().getMapDescriptorsToMapRecycleFormat2(grid!!)
-
-                    val sharedPrefMapUpdate = sharedPref.getBoolean(SHARED_PREF_MAP_UPDATE,DEFAULT_VALUE_MAP_UPDATE)
-                    if(sharedPrefMapUpdate || updateMap){
-                        Log.d("MainActivity","Updating map")
-                        // updates the 2d arena map with robot positions and map descriptor (unexplored, explored, obstacle)
-                        mMapDescriptor.clear()
-                        mMapDescriptor.addAll(mapDescriptor)
-                        mazeAdapter.notifyDataSetChanged()
-                        updateMap = false
-                    }
-
+            when(messageParts[0]){
+                "map"->{
+                    mMapDescriptor.clear()
+                    mMapDescriptor.addAll(Utils().getMapDescriptorsToMapRecycleFormat(messageParts[1]))
                 }
-
-                if(!(json.array<Int>("robotPosition").isNullOrEmpty())){
-                    val robotPosition = json.array<Int>("robotPosition")
-
-                    val newCoordinate = Utils().flipCoordinatesForADM(robotPosition!!.get(0),robotPosition!!.get(1))
-                    val direction = Utils().getDirection(robotPosition!!.get(2))
-
-                    //Log.d("MainActivity","Robot position received ${robotPosition!!.get(0)} - new coordinate: $newCoordinate")
+                "pos"->{
                     robotPositions.clear()
-                    robotPositions.addAll(Utils().getRobotPositions2("${newCoordinate.first},${newCoordinate.second},$direction"))
-                    mazeAdapter.notifyDataSetChanged()
+                    robotPositions.addAll(Utils().getRobotPositions(messageParts[1]))
                 }
-
-                if(!(json.string("status").isNullOrEmpty())){
-                    val textMessageReceived = findViewById<TextView>(R.id.text_robot_status)
-                    val status = json.string("status")
-                    textMessageReceived.text = "Robot status: $status"
-                }
-            }catch (e: KlaxonException){
-                val messageParts = message.split(":")
-
-                when(messageParts[0]){
-                    "map"->{
-                        mMapDescriptor.clear()
-                        mMapDescriptor.addAll(Utils().getMapDescriptorsToMapRecycleFormat(messageParts[1]))
+                "img"->{
+                    val imagePositionAndId = Utils().getImagePosition(messageParts[1])
+                    if(imagePositionAndId != null){
+                        imagePositions.add(imagePositionAndId)
                     }
-                    "pos"->{
-                        robotPositions.clear()
-                        robotPositions.addAll(Utils().getRobotPositions(messageParts[1]))
-                    }
-                    "img"->{
-                        val imagePositionAndId = Utils().getImagePosition(messageParts[1])
-                        if(imagePositionAndId != null){
-                            imagePositions.add(imagePositionAndId)
-                        }
 
-                    }
-                }
-                val sharedPrefMapUpdate = sharedPref.getBoolean(SHARED_PREF_MAP_UPDATE,DEFAULT_VALUE_MAP_UPDATE)
-                if(sharedPrefMapUpdate){
-                    // updates the 2d arena map with robot positions and map descriptor (unexplored, explored, obstacle)
-                    mazeAdapter.notifyDataSetChanged()
                 }
             }
-
-
-            // end of for clearing checklist
-
-            // actual code
-//            val messageParts = message.split(":")
-//
-//            when(messageParts[0]){
-//                "map"->{
-//                    mMapDescriptor.clear()
-//                    mMapDescriptor.addAll(Utils().getMapDescriptorsToMapRecycleFormat(messageParts[1]))
-//                }
-//                "pos"->{
-//                    robotPositions.clear()
-//                    robotPositions.addAll(Utils().getRobotPositions(messageParts[1]))
-//                }
-//            }
-//
-//            val sharedPrefMapUpdate = sharedPref.getBoolean(SHARED_PREF_MAP_UPDATE,DEFAULT_VALUE_MAP_UPDATE)
-//            if(sharedPrefMapUpdate){
-//                // updates the 2d arena map with robot positions and map descriptor (unexplored, explored, obstacle)
-//                mazeAdapter.notifyDataSetChanged()
-//            }
-
-            // end of actual code
-
-
+            val sharedPrefMapUpdate = sharedPref.getBoolean(SHARED_PREF_MAP_UPDATE,DEFAULT_VALUE_MAP_UPDATE)
+            if(sharedPrefMapUpdate){
+                // updates the 2d arena map with robot positions and map descriptor (unexplored, explored, obstacle)
+                mazeAdapter.notifyDataSetChanged()
+            }
 
             val textMessageReceived = findViewById<TextView>(R.id.text_message_received)
             textMessageReceived.text = "Receive: $message"
