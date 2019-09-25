@@ -18,6 +18,7 @@
     <color name="colorPrimaryButtonCTA">#29D63D</color>
     <color name="colorSecondaryButtonCTA">@color/colorPrimaryLight</color>
 
+    <color name="colorBackground">#F6F8FA</color>
     <color name="colorUnexplored">#7C7C7C</color>
     <color name="colorExplored">#FDFDFD</color>
     <color name="colorObstacle">#000</color>

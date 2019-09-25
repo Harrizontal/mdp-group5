@@ -14,6 +14,7 @@ import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
 import android.hardware.SensorManager
+import android.os.Handler
 import android.os.IBinder
 import android.view.Menu
 import android.view.MenuItem
@@ -21,6 +22,9 @@ import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
+import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
+import com.harrizontal.mdpgroup5.adapter.ImagesFoundRecycleAdapter
 import com.harrizontal.mdpgroup5.constants.ActivityConstants
 import com.harrizontal.mdpgroup5.constants.ActivityConstants.Companion.REQUEST_START_COORDINATE
 import com.harrizontal.mdpgroup5.constants.ActivityConstants.Companion.REQUEST_WAYPOINT
@@ -35,6 +39,7 @@ import com.harrizontal.mdpgroup5.constants.SharedPreferenceConstants.Companion.S
 import com.harrizontal.mdpgroup5.helper.Utils
 import com.harrizontal.mdpgroup5.service.BService
 import kotlinx.android.synthetic.main.activity_main_3.*
+
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
 
@@ -57,6 +62,33 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     var myService: BService? = null
     var isBound = false
 
+
+    private lateinit var percentageExploredTextView: TextView
+
+
+    // for images found UI
+    private lateinit var imagesFoundRecycleView: RecyclerView
+    private var imagesFound: ArrayList<String> = ArrayList()
+    private lateinit var imagesFoundRecycleAdapter: ImagesFoundRecycleAdapter
+    // for timer
+    private lateinit var timerTextView: TextView
+
+    val timerHandler = Handler()
+    var startTime: Long = 0
+    var timerRunnable: Runnable = object : Runnable {
+
+        override fun run() {
+            val millis = System.currentTimeMillis() - startTime
+            var seconds = (millis / 1000).toInt()
+            val minutes = seconds / 60
+            seconds = seconds % 60
+
+            timerTextView.text = (String.format("%d:%02d", minutes, seconds))
+            //Log.d("Timer",((String.format("%d:%02d", minutes, seconds))))
+            timerHandler.postDelayed(this,500)
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main_3)
@@ -71,6 +103,14 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
         arenaGridView = findViewById<ArenaGridView>(R.id.arenagridview)
 
+        timerTextView = findViewById(R.id.text_timer)
+        percentageExploredTextView = findViewById(R.id.text_exploration_percent)
+
+        imagesFoundRecycleView = findViewById(R.id.recyclerview_image_found)
+        imagesFoundRecycleView.layoutManager = LinearLayoutManager(this)
+        imagesFoundRecycleAdapter = ImagesFoundRecycleAdapter(imagesFound,this)
+        imagesFoundRecycleView.adapter = imagesFoundRecycleAdapter
+
         // sensors
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
 
@@ -82,6 +122,39 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             Log.d("MainActivity","Sensor not detected")
             Toast.makeText(applicationContext,"No sensor",Toast.LENGTH_SHORT).show()
         }
+
+        button_turnleft?.setOnClickListener {
+            sendMessageToBluetooth("mov:left,1")
+        }
+
+        button_turnRight.setOnClickListener {
+            sendMessageToBluetooth("mov:right,1")
+        }
+
+        button_up.setOnClickListener {
+            sendMessageToBluetooth("mov:forward,1")
+        }
+
+        button_exploration.setOnClickListener {
+            if(sendMessageToBluetooth("alg:explore")){
+                Toast.makeText(applicationContext, "Exploration started", Toast.LENGTH_SHORT).show()
+            }
+            timerHandler.removeCallbacks(timerRunnable) // stop timer
+            startTime = System.currentTimeMillis()
+            timerHandler.postDelayed(timerRunnable, 0) // start timer
+            percentageExploredTextView.text = "0%"
+            arenaGridView.resetMap()
+        }
+
+        button_fastest_path.setOnClickListener {
+            if(sendMessageToBluetooth("alg:fast")){
+                Toast.makeText(applicationContext, "Fastest path started", Toast.LENGTH_SHORT).show()
+            }
+            timerHandler.removeCallbacks(timerRunnable) // stop timer
+            startTime = System.currentTimeMillis()
+            timerHandler.postDelayed(timerRunnable, 0) // start timer
+        }
+
 
 
         initializeUpdateMap()
@@ -186,7 +259,13 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             when(messageParts[0]){
                 "map"->{
                     val mapDescriptor = Utils().getcombinedMapDescriptor(messageParts[1])
-                    arenaGridView.updateExploredAndObstacles(mapDescriptor)
+                    arenaGridView.updateExploredAndObstacles(mapDescriptor) // update grids
+                    val percentageExplored = Utils().countExploredPercentage(mapDescriptor)
+                    percentageExploredTextView.text = "${percentageExplored}%" // update percentage in UI
+                    // stops timer when its 100% explored
+                    if(percentageExplored == 100){
+                        timerHandler.removeCallbacks(timerRunnable)
+                    }
                 }
                 "pos"->{
                     val messageInnerParts = messageParts[1].split(",")
@@ -197,6 +276,12 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 "img"->{
                     val messageInnerParts = messageParts[1].split(",")
                     arenaGridView.addDetectedImages(Pair(Pair(messageInnerParts[0].toInt(),messageInnerParts[1].toInt()),messageInnerParts[2].toInt()))
+                    // updates the recyclerview for images found
+                    val imageString = "(${messageInnerParts[2]},${messageInnerParts[0]},${messageInnerParts[1]})"
+                    imagesFound.add(imageString)
+                    imagesFoundRecycleAdapter.notifyDataSetChanged()
+
+
                 }
             }
 
@@ -248,13 +333,15 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
      * Sends message to bluetooth service
      * returns a toast if is not binded to bluetooth service
      */
-    private fun sendMessageToBluetooth(message: String){
+    private fun sendMessageToBluetooth(message: String) : Boolean{
         Log.d("MA","Sending data!")
         if(isBound){
             //myService?.sendMessage(MDPConstants.DEFAULT_MAP_DESCRIPTOR_STRING)
             myService?.sendMessage(message)
+            return true
         }else{
             Toast.makeText(applicationContext, "Cant send message. No bluetooth connected", Toast.LENGTH_SHORT).show()
+            return false
         }
     }
 
@@ -336,6 +423,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 true
             }
             R.id.menu_reset_map -> {
+                timerHandler.removeCallbacks(timerRunnable) // stop timer
+                timerTextView.text ="0:00" // set 0:00
+                percentageExploredTextView.text = "0%"
                 arenaGridView.resetMap()
                 true
             }

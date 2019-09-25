@@ -33,6 +33,7 @@ class ArenaGridView(context: Context?, attrs: AttributeSet?) : View(context, att
     private var waypoint: Pair<Int,Int>? = null
     private var autoUpdate: Boolean = true
     private var touchRectangle: Pair<Int,Int>? = null
+    private var exploredCount: Int = 0 // for percentage explored UI
 
 
 
@@ -240,6 +241,7 @@ class ArenaGridView(context: Context?, attrs: AttributeSet?) : View(context, att
                                 ((j + 1) * cellWidth).toFloat(), ((numberRows - i) * cellHeight).toFloat(),
                                 paintObstacle
                             )
+                            exploredCount++ // for percentaged explored UI
                         }
                         MDPConstants.EXPLORED -> {
                             canvas.drawRect(
@@ -247,6 +249,7 @@ class ArenaGridView(context: Context?, attrs: AttributeSet?) : View(context, att
                                 ((j + 1) * cellWidth).toFloat(), ((numberRows - i) * cellHeight).toFloat(),
                                 paintExplored
                             )
+                            exploredCount++ // for percentaged explored UI
                         }
                         MDPConstants.UNEXPLORED -> {
                             canvas.drawRect(
@@ -278,6 +281,7 @@ class ArenaGridView(context: Context?, attrs: AttributeSet?) : View(context, att
                     val robotHeadRadius = (radius * 0.3).toFloat()
                     canvas.drawCircle(x,y,radius,paintRobot)
 
+                    // depending on the robot direction, we draw a circle with an offset
                     when(robotDirection){
                         "n" -> {
                             canvas.drawCircle(x,y-28,robotHeadRadius,paintRobotHead)
@@ -444,4 +448,10 @@ class ArenaGridView(context: Context?, attrs: AttributeSet?) : View(context, att
             invalidate()
         }
     }
+
+//    fun getPercentageExplored(): Int{
+//        val percentage = ((exploredCount / 300) * 100)
+//        Log.d("ArenaGridView","exploredCount: $exploredCount percentage: $percentage")
+//        return ((exploredCount / 300) * 100)
+//    }
 }

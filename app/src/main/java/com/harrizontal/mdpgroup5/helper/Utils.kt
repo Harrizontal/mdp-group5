@@ -2,9 +2,8 @@ package com.harrizontal.mdpgroup5.helper
 
 import android.util.Log
 import com.harrizontal.mdpgroup5.constants.MDPConstants
-import java.lang.Double.parseDouble
-import java.lang.IndexOutOfBoundsException
-import java.math.BigInteger
+import kotlin.math.round
+import kotlin.math.roundToInt
 
 
 class Utils {
@@ -21,7 +20,7 @@ class Utils {
 
         val testingDescriptor7 = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;00000000000003800000383800100000000400080010fe3004000000006000c0100020004000"
 
-        val mapDescriptor = testingDescriptor7.split(";")
+        val mapDescriptor = testingDescriptor2.split(";")
 
         val firstDescriptor = mapDescriptor[0]
         val secondDescriptor = mapDescriptor[1]
@@ -105,4 +104,16 @@ class Utils {
         return Pair(newXValue,newYValue)
     }
 
+
+    fun countExploredPercentage(mapDescriptor: ArrayList<Char>): Int{
+        var exploredCount: Double = 0.00
+        for (item in mapDescriptor){
+            if(item != MDPConstants.UNEXPLORED){
+                exploredCount++
+            }
+        }
+        val percentage = (exploredCount/ (MDPConstants.NUM_ROWS * MDPConstants.NUM_COLUMNS))* 100
+        //Log.d("Utils","exploredCount: $exploredCount percentage explored: $percentage")
+        return percentage.roundToInt()
+    }
 }
