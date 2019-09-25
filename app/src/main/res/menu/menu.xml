@@ -15,6 +15,10 @@
             android:title="Function 2" app:showAsAction="never"/>
 
     <item
+            android:id="@+id/menu_reset_map"
+            android:title="Reset map" app:showAsAction="never"/>
+
+    <item
             android:id="@+id/menu_settings"
             android:title="Settings" app:showAsAction="never"/>
 

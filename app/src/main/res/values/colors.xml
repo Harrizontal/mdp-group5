@@ -12,12 +12,19 @@
     <color name="colorAccentLight">#c158dc</color>
 
     <color name="colorOnPrimary">#ffffff</color>
+    <color name="colorBlack">#000000</color>
     <color name="colorOnSecondary">#ffffff</color>
 
     <color name="colorPrimaryButtonCTA">#29D63D</color>
     <color name="colorSecondaryButtonCTA">@color/colorPrimaryLight</color>
 
+    <color name="colorUnexplored">#7C7C7C</color>
+    <color name="colorExplored">#FDFDFD</color>
+    <color name="colorObstacle">#000</color>
     <color name="colorStartArena">#9029D63D</color>
     <color name="colorGoalArena">#90F10E0E</color>
     <color name="colorWayPoint">#D3FDD300</color>
+    <color name="colorRobotBody">@color/colorPrimary</color>
+    <color name="colorRobotHead">#053270</color>
+    <color name="colorTransparent">#80000000</color>
 </resources>

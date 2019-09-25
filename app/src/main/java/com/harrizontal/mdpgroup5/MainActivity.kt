@@ -18,16 +18,13 @@ import android.os.IBinder
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
-import androidx.recyclerview.widget.GridLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.harrizontal.mdpgroup5.adapter.*
 import com.harrizontal.mdpgroup5.constants.ActivityConstants
 import com.harrizontal.mdpgroup5.constants.ActivityConstants.Companion.REQUEST_START_COORDINATE
 import com.harrizontal.mdpgroup5.constants.ActivityConstants.Companion.REQUEST_WAYPOINT
 import com.harrizontal.mdpgroup5.constants.BluetoothConstants
-import com.harrizontal.mdpgroup5.constants.MDPConstants
 import com.harrizontal.mdpgroup5.constants.SharedPreferenceConstants
 import com.harrizontal.mdpgroup5.constants.SharedPreferenceConstants.Companion.DEFAULT_VALUE_FUNCTION_1
 import com.harrizontal.mdpgroup5.constants.SharedPreferenceConstants.Companion.DEFAULT_VALUE_FUNCTION_2
@@ -37,7 +34,7 @@ import com.harrizontal.mdpgroup5.constants.SharedPreferenceConstants.Companion.S
 import com.harrizontal.mdpgroup5.constants.SharedPreferenceConstants.Companion.SHARED_PREF_MAP_UPDATE
 import com.harrizontal.mdpgroup5.helper.Utils
 import com.harrizontal.mdpgroup5.service.BService
-import kotlinx.android.synthetic.main.activity_main_2.*
+import kotlinx.android.synthetic.main.activity_main_3.*
 
 class MainActivity : AppCompatActivity(), SensorEventListener {
 
@@ -45,35 +42,24 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
     private lateinit var bluetoothAdapter: BluetoothAdapter
 
-    private var mMapDescriptor: ArrayList<Char> = ArrayList()
-    // actual code
-    private val startArea: ArrayList<Int> = MDPConstants.DEFAULT_START_AREA
-    private val goalArea: ArrayList<Int> = MDPConstants.DEFAULT_END_AREA
-    private var robotPositions: ArrayList<Pair<Int,Pair<Char,Boolean>>> = MDPConstants.DEFAULT_ROBOT_POSITION
-    private var wayPointPosition: ArrayList<Int> = ArrayList() // only store one wayPointPosition
-    private var imagePositions: ArrayList<Pair<Int,Int>> = ArrayList()
 
     // for tilt mechanism
     private lateinit var sensorManager: SensorManager
     private var sensor: Sensor? = null
     private var enableTilt: Boolean = false
 
-    // delete this once clear checklist
-//    private val startArea: ArrayList<Int> = ArrayList()
-//    private val goalArea: ArrayList<Int> = ArrayList()
-    private var updateMap: Boolean = false
-
-
+    // shared preference
     private lateinit var sharedPref: SharedPreferences
-    private lateinit var mazeAdapter: MazeAdapter
+
+    // arena map
+    private lateinit var arenaGridView: ArenaGridView
 
     var myService: BService? = null
     var isBound = false
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main_2)
+        setContentView(R.layout.activity_main_3)
 
         supportActionBar?.setSubtitle("Not connected")
 
@@ -83,33 +69,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         sharedPref = getSharedPreferences(
             SharedPreferenceConstants.SHARED_PREF_MDP, Context.MODE_PRIVATE)
 
-        mMapDescriptor = Utils().convertMapDescriptor1ToMapRecycleFormat(MDPConstants.DEFAULT_MAP_DESCRIPTOR_STRING)
+        arenaGridView = findViewById<ArenaGridView>(R.id.arenagridview)
 
-        Log.d("MA","Size of Descriptor: ${mMapDescriptor!!.size}")
-
-        // yAxis
-        val yAxisGridView = findViewById<RecyclerView>(R.id.yAxis)
-        val ylayoutManager = GridLayoutManager(this,1)
-        val yAxisAdapter = MazeAxisAdapter(this,MDPConstants.NUM_ROWS,1)
-        yAxisGridView.layoutManager = ylayoutManager
-        yAxisGridView.adapter = yAxisAdapter
-
-        // xAxis
-        val xAxisGridView = findViewById<RecyclerView>(R.id.xAxis)
-        val xlayoutManager = GridLayoutManager(this,MDPConstants.NUM_COLUMNS)
-        val xAxisAdapter = MazeAxisAdapter(this,MDPConstants.NUM_COLUMNS,0)
-        xAxisGridView.layoutManager = xlayoutManager
-        xAxisGridView.adapter = xAxisAdapter
-
-
-        // maze
-        val recycleViewMaze = findViewById<RecyclerView>(R.id.recyclerview_maze)
-        val gridLayoutManager = GridLayoutManager(this,MDPConstants.NUM_COLUMNS)
-        mazeAdapter = MazeAdapter(this,MDPConstants.NUM_ROWS,MDPConstants.NUM_COLUMNS,mMapDescriptor,startArea,goalArea,robotPositions,wayPointPosition,imagePositions)
-        recycleViewMaze.addItemDecoration(SpacesItemDecoration(0))
-        recycleViewMaze.layoutManager = gridLayoutManager
-        recycleViewMaze.adapter = mazeAdapter
-
+        // sensors
         sensorManager = getSystemService(Context.SENSOR_SERVICE) as SensorManager
 
         if (sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) != null) {
@@ -119,26 +81,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         } else {
             Log.d("MainActivity","Sensor not detected")
             Toast.makeText(applicationContext,"No sensor",Toast.LENGTH_SHORT).show()
-        }
-
-        button_turnleft.setOnClickListener {
-            sendMessageToBluetooth("mov:left,1")
-        }
-
-        button_turnRight.setOnClickListener {
-            sendMessageToBluetooth("mov:right,1")
-        }
-
-        button_up.setOnClickListener {
-            sendMessageToBluetooth("mov:forward,1")
-        }
-
-        button_exploration.setOnClickListener {
-            sendMessageToBluetooth("alg:explore")
-        }
-
-        button_fastest_path.setOnClickListener {
-            sendMessageToBluetooth("alg:fast")
         }
 
 
@@ -158,22 +100,18 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             SHARED_PREF_MAP_UPDATE,
             DEFAULT_VALUE_MAP_UPDATE
         )
+        arenaGridView.setAutoUpdate(sharedPrefMapUpdate)
+
         // if map update is false, display button to update manaully
         if(!sharedPrefMapUpdate){
             button_update_map.apply{
                 visibility = View.VISIBLE
                 setOnClickListener {
-                    Log.d("MainActivity","Updating Map manually")
-                    // actual code
                     val sharedPrefMapUpdate = sharedPref.getBoolean(SHARED_PREF_MAP_UPDATE,DEFAULT_VALUE_MAP_UPDATE)
                     if(!sharedPrefMapUpdate){
                         Log.d("MA","Map updated")
-                        mazeAdapter.notifyDataSetChanged()
+                        //TODO: update map here
                     }
-
-                    // for clearing checklist
-//                    updateMap = true
-//                    sendMessageToBluetooth("sendArena")
                 }
             }
         }else{
@@ -199,9 +137,6 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         override fun onReceive(context:Context, intent:Intent) {
             val connectionStatus = intent.getIntExtra("ConnectionStatus",99)
             Log.d("MainActivity","Received status :${connectionStatus}")
-
-            Toast.makeText(context, "Connection status: $connectionStatus", Toast.LENGTH_SHORT).show()
-
             when(connectionStatus){
                 BluetoothConstants.STATE_LISTEN -> {
                     supportActionBar?.setSubtitle("Listening for incoming connection")
@@ -242,35 +177,36 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     private var bluetoothIncomingMessage: BroadcastReceiver = object: BroadcastReceiver(){
         override fun onReceive(context: Context?, intent: Intent?) {
             val message = intent!!.getStringExtra("IncomingMessage")
-            Log.d("MainActivity","Received some message: ${message}")
 
             val messageParts = message.split(":")
 
+            val textMessageReceived = findViewById<TextView>(R.id.text_message_received)
+            textMessageReceived.text = "Receive: $message"
+
             when(messageParts[0]){
                 "map"->{
-                    mMapDescriptor.clear()
-                    mMapDescriptor.addAll(Utils().getMapDescriptorsToMapRecycleFormat(messageParts[1]))
+                    val mapDescriptor = Utils().getcombinedMapDescriptor(messageParts[1])
+                    arenaGridView.updateExploredAndObstacles(mapDescriptor)
                 }
                 "pos"->{
-                    robotPositions.clear()
-                    robotPositions.addAll(Utils().getRobotPositions(messageParts[1]))
+                    val messageInnerParts = messageParts[1].split(",")
+                    val x = messageInnerParts[0].toInt()
+                    val y = messageInnerParts[1].toInt()
+                    arenaGridView.setRobot(Pair(x,y),messageInnerParts[2])
                 }
                 "img"->{
-                    val imagePositionAndId = Utils().getImagePosition(messageParts[1])
-                    if(imagePositionAndId != null){
-                        imagePositions.add(imagePositionAndId)
-                    }
-
+                    val messageInnerParts = messageParts[1].split(",")
+                    arenaGridView.addDetectedImages(Pair(Pair(messageInnerParts[0].toInt(),messageInnerParts[1].toInt()),messageInnerParts[2].toInt()))
                 }
             }
+
             val sharedPrefMapUpdate = sharedPref.getBoolean(SHARED_PREF_MAP_UPDATE,DEFAULT_VALUE_MAP_UPDATE)
             if(sharedPrefMapUpdate){
                 // updates the 2d arena map with robot positions and map descriptor (unexplored, explored, obstacle)
-                mazeAdapter.notifyDataSetChanged()
+               //mazeAdapter.notifyDataSetChanged()
             }
 
-            val textMessageReceived = findViewById<TextView>(R.id.text_message_received)
-            textMessageReceived.text = "Receive: $message"
+
         }
     }
 
@@ -399,6 +335,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 sendMessageToBluetooth(message)
                 true
             }
+            R.id.menu_reset_map -> {
+                arenaGridView.resetMap()
+                true
+            }
             R.id.menu_settings -> {
                 val intent = Intent(this, SettingsActivity::class.java)
                 startActivityForResult(intent, ActivityConstants.REQUEST_SETTINGS)
@@ -441,27 +381,23 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     val requestType = data?.extras?.getInt("REQUEST_COORDINATE_TYPE")
                     Log.d("MA","requestCode: $requestCode, resultCode: $resultCode, X:$xCord Y:$yCord")
 
+
+
                     when(requestType){
                         REQUEST_WAYPOINT -> {
-                            val id = Utils().convertCoordinatesToGridId(xCord!!.toInt(),yCord!!.toInt())
-                            wayPointPosition.clear()
-                            wayPointPosition.add(id)
-                            mazeAdapter.notifyDataSetChanged()
-                            sendMessageToBluetooth("alg:swp,$xCord,$yCord")
+                            arenaGridView.setWaypoint(Pair(xCord!!.toInt(),yCord!!.toInt()))
+                            sendMessageToBluetooth("alg:swp,$yCord,$xCord") // sending row,column
                         }
                         REQUEST_START_COORDINATE -> {
-                            val newCoordinates = Utils().recalculateMiddleRobotPosition(xCord!!.toInt(),yCord!!.toInt())
-                            // for clearing checklist
-                            sendMessageToBluetooth("alg:start,$xCord,$yCord")
-                            // actual code
-                            //sendMessageToBluetooth("alg:start,${newCoordinates.first},${newCoordinates.second}")
-                            val robotPositionsString = "${newCoordinates.first},${newCoordinates.second},n" // hardcode to north first
-                            robotPositions.clear()
-                            robotPositions.addAll(Utils().getRobotPositions(robotPositionsString))
-                            mazeAdapter.notifyDataSetChanged() // update the arena map
+                            val newCoordinates = Utils().recalculateMiddleRobotPosition(xCord!!.toInt(),yCord!!.toInt()) // gives x,y as a pair
+                            arenaGridView.setRobot(Pair(newCoordinates.first,newCoordinates.second),"n") // hard code north
+                            sendMessageToBluetooth("alg:start,${newCoordinates.second},${newCoordinates.first}")  // sending row,column
                         }
                     }
                 }
+
+                // remove touch effect on grid
+                arenaGridView.removeTouchEffect()
             }
             // happens when user wants to disconnect bluetooth
             ActivityConstants.REQUEST_BLUETOOTH_DISCONNECT -> {
@@ -520,10 +456,9 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     Log.d("MainActivity:", "FORWARD TILT")
                     sendMessageToBluetooth("mov:forward,1")
                 }
-
                 // Backward Tilt
                 if (y > 0) {
-                    //Log.d("MainActivity:", "DOWN TILT!!")
+
                 }
             }
         }
