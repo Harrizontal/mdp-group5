@@ -2,8 +2,8 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
         android:orientation="vertical"
-        android:layout_width="25dp"
-        android:layout_height="25dp">
+        android:layout_width="30dp"
+        android:layout_height="30dp">
 
     <TextView
             android:id="@+id/textView"

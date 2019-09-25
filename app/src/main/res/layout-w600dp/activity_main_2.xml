@@ -25,11 +25,12 @@
                     app:layout_constraintLeft_toLeftOf="parent"
                     app:layout_constraintRight_toLeftOf="@id/recyclerview_maze"
                     app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintHorizontal_chainStyle="packed"
                     />
 
             <androidx.recyclerview.widget.RecyclerView
                     android:id="@+id/recyclerview_maze"
-                    android:layout_width="0dp"
+                    android:layout_width="450dp"
                     android:layout_height="wrap_content"
                     app:layout_constraintTop_toTopOf="parent"
                     app:layout_constraintLeft_toRightOf="@id/yAxis"
@@ -160,12 +161,7 @@
                                 app:layout_constraintRight_toRightOf="parent" />
 
                     </androidx.constraintlayout.widget.ConstraintLayout>
-
-
                 </androidx.constraintlayout.widget.ConstraintLayout>
-
-
-
             </androidx.constraintlayout.widget.ConstraintLayout>
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.core.widget.NestedScrollView>

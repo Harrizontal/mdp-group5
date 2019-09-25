@@ -21,12 +21,12 @@
                 android:layout_height="wrap_content" />
     </LinearLayout>
     <Button
-            android:id="@+id/waypoint_btn"
+            android:id="@+id/button_waypoint"
             android:text="Waypoint"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />
     <Button
-            android:id="@+id/start_coordinate_btn"
+            android:id="@+id/button_start_coordinate"
             android:text="Start Coordinate"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content" />

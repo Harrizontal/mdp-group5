@@ -14,7 +14,9 @@ import java.io.IOException
 import java.io.InputStream
 import java.io.OutputStream
 import android.os.*
+import com.harrizontal.mdpgroup5.constants.BluetoothConstants.Companion.STATE_RETRY_CONNECTING
 import java.nio.charset.Charset
+import java.util.*
 
 
 class BService : Service(){
@@ -30,6 +32,8 @@ class BService : Service(){
 
     private val myBinder = MyLocalBinder()
 
+    private var retryTries = 3
+    private var hardDisconnect = false
 
     override fun onBind(intent: Intent?): IBinder? {
         return myBinder
@@ -48,7 +52,7 @@ class BService : Service(){
         mAdapter = BluetoothAdapter.getDefaultAdapter()
 
         device = intent!!.getExtras()!!.getParcelable<Parcelable>("device") as BluetoothDevice
-        connectThread = ConnectThread(device!!,startId)
+        connectThread = ConnectThread(device!!)
         connectThread!!.start()
         return super.onStartCommand(intent, flags, startId)
     }
@@ -86,11 +90,12 @@ class BService : Service(){
     }
 
     @Synchronized
-    fun stop() {
+    fun stopAllConnection() {
+        hardDisconnect = true
+        setState(BluetoothConstants.STATE_NONE)
         cancelConnectThread()
         cancelConnectedThread()
-        setState(BluetoothConstants.STATE_NONE)
-        stopSelf() // stop service
+        stopSelf() // stopAllConnection service
     }
 
     private fun cancelConnectThread() {
@@ -118,11 +123,47 @@ class BService : Service(){
             connectedThread = null
         }
 
+
+
         connectedThread = ConnectedThread(socket)
         connectedThread!!.start()
 
         setState(BluetoothConstants.STATE_CONNECTED)
     }
+
+    @Synchronized
+    private fun reconnect(socket: BluetoothSocket){
+        if (connectedThread != null) {
+            connectedThread!!.toStop()
+            connectedThread!!.cancel()
+
+            connectedThread = null
+        }
+
+        val timer = Timer()
+        timer.scheduleAtFixedRate(object : TimerTask() {
+            var times: Int = 3
+            override fun run() {
+                Log.d("Timer","Connecting back in $times second")
+                setState(STATE_RETRY_CONNECTING)
+                if(times == 0){
+                    timer.cancel()
+                    connectThread = ConnectThread(socket.remoteDevice)
+                    connectThread!!.start()
+                }
+                times--
+            }
+
+            override fun cancel(): Boolean {
+                Log.d("Bservice","Timer ended")
+                return super.cancel()
+            }
+        }, 0, 1000)
+
+
+
+    }
+
 
     private inner class AcceptThread : Thread(){
         private val mmServerSocket: BluetoothServerSocket?
@@ -182,7 +223,7 @@ class BService : Service(){
      * with a device. It runs straight through; the connection either
      * succeeds or fails.
      */
-    private inner class ConnectThread(private val mmDevice: BluetoothDevice, private val startId: Int) : Thread() {
+    private inner class ConnectThread(private val mmDevice: BluetoothDevice) : Thread() {
         private val mmSocket: BluetoothSocket?
 
         init {
@@ -206,6 +247,14 @@ class BService : Service(){
                 // Unable to connect; close the socket and get out
                 setState(BluetoothConstants.STATE_ERROR)
                 Log.e("ConnectThread","connectException error: "+connectException)
+
+                if(retryTries > 0 && !hardDisconnect){
+                    reconnect(mmSocket!!)
+                }else{
+                    // when user (from mobile app side) request to disconnect, it will stopAllConnection service
+                    stopAllConnection()
+                }
+
                 stopSelf()
                 try {
                     mmSocket!!.close()
@@ -235,7 +284,7 @@ class BService : Service(){
             try {
                 mmSocket!!.close()
             } catch (e: IOException) {
-                Log.e("", "Close() socket failed", e)
+                Log.e("ConnectThread", "Close() socket failed", e)
             }
 
         }
@@ -281,10 +330,15 @@ class BService : Service(){
                     numBytes = mmInStream!!.read(mmBuffer)
                     incomingMessage = String(mmBuffer, 0, numBytes)
                 } catch (e: IOException) {
-                    Log.e("", "Input stream was disconnected", e)
+                    Log.e("ConnectedThread", "Input stream was disconnected", e)
                     setState(BluetoothConstants.STATE_NONE)
-                    stopSelf()
 
+                    if(retryTries > 0 && !hardDisconnect){
+                        reconnect(mmSocket)
+                    }else{
+                        // when user (from mobile app side) request to disconnect, it will stopAllConnection service
+                        stopAllConnection()
+                    }
                     break
                 }
 
@@ -303,7 +357,7 @@ class BService : Service(){
                 mmOutStream!!.write(bytes)
                 //myHandler!!.obtainMessage(BluetoothConstants.MESSAGE_WRITE, -1, -1, bytes).sendToTarget()
             } catch (e: IOException) {
-                Log.e("", "Exception during write", e)
+                Log.e("ConnectedThread", "Exception during write", e)
             }
         }
 

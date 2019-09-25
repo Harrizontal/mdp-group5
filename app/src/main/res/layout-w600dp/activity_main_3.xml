@@ -17,44 +17,105 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
-            <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/yAxis"
-                    android:layout_width="wrap_content"
+            <com.harrizontal.mdpgroup5.ArenaGridView
+                    android:id="@+id/arenagridview"
+                    android:layout_width="430dp"
                     android:layout_height="wrap_content"
-                    app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
+                    android:layout_marginTop="10dp"
+                    android:layout_marginLeft="10dp"
+                    app:layout_constraintTop_toTopOf="parent"
                     app:layout_constraintLeft_toLeftOf="parent"
-                    app:layout_constraintRight_toLeftOf="@id/recyclerview_maze"
-                    app:layout_constraintTop_toTopOf="parent"
-                    />
+                    app:layout_constraintRight_toLeftOf="@id/card_timer"/>
 
-            <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/recyclerview_maze"
+
+            <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/card_timer"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_margin="10dp"
+                    app:contentPadding="10dp"
                     app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintLeft_toRightOf="@id/yAxis"
-                    app:layout_constraintRight_toRightOf="parent"
-                    app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-                    />
+                    app:layout_constraintLeft_toRightOf="@id/arenagridview"
+                    app:layout_constraintRight_toRightOf="parent">
 
-            <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/xAxis"
+                <androidx.constraintlayout.widget.ConstraintLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                    <TextView
+                            android:id="@+id/text_title_timer"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textStyle="bold"
+                            android:textColor="@color/colorBlack"
+                            app:layout_constraintTop_toTopOf="parent"
+                            app:layout_constraintLeft_toLeftOf="parent"
+                            app:layout_constraintRight_toRightOf="parent"
+                            android:text="Timer"/>
+
+                    <TextView
+                            android:id="@+id/text_timer"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textStyle="normal"
+                            android:textColor="@color/colorBlack"
+                            app:layout_constraintTop_toBottomOf="@id/text_title_timer"
+                            app:layout_constraintLeft_toLeftOf="parent"
+                            app:layout_constraintRight_toRightOf="parent"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            android:text="00:49"/>
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/card_robot_status"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    app:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-                    app:layout_constraintEnd_toEndOf="@id/recyclerview_maze"
-                    app:layout_constraintStart_toStartOf="@id/recyclerview_maze"
-                    app:layout_constraintTop_toBottomOf="@id/recyclerview_maze"
-                    />
+                    android:layout_margin="10dp"
+                    app:contentPadding="10dp"
+                    app:layout_constraintTop_toBottomOf="@id/card_timer"
+                    app:layout_constraintLeft_toRightOf="@id/arenagridview"
+                    app:layout_constraintRight_toRightOf="parent">
 
+                <androidx.constraintlayout.widget.ConstraintLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                    <TextView
+                            android:id="@+id/text_title_robot_status"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textStyle="bold"
+                            android:textColor="@color/colorBlack"
+                            app:layout_constraintTop_toTopOf="parent"
+                            app:layout_constraintLeft_toLeftOf="parent"
+                            app:layout_constraintRight_toRightOf="parent"
+                            android:text="Robot Status"/>
+
+                    <TextView
+                            android:id="@+id/text_robot_status"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textStyle="normal"
+                            android:textColor="@color/colorBlack"
+                            app:layout_constraintTop_toBottomOf="@id/text_title_robot_status"
+                            app:layout_constraintLeft_toLeftOf="parent"
+                            app:layout_constraintRight_toRightOf="parent"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            android:text="Moving up"/>
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+            </com.google.android.material.card.MaterialCardView>
 
             <TextView
                     android:id="@+id/text_message_received"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="No text received"
-                    app:layout_constraintTop_toBottomOf="@id/xAxis"
+                    app:layout_constraintTop_toBottomOf="@id/arenagridview"
                     app:layout_constraintLeft_toLeftOf="parent"
                     app:layout_constraintRight_toRightOf="parent"/>
 
@@ -75,15 +136,6 @@
                         app:layout_constraintTop_toTopOf="parent"
                         app:layout_constraintRight_toLeftOf="@id/layout_movement"
                         app:layout_constraintBottom_toBottomOf="parent">
-
-                    <TextView
-                            android:id="@+id/text_robot_status"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="Robot Status"
-                            app:layout_constraintTop_toTopOf="parent"
-                            app:layout_constraintLeft_toLeftOf="parent"
-                            app:layout_constraintRight_toRightOf="parent"/>
 
                     <Button
                             android:text="Exploration"

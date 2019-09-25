@@ -23,7 +23,8 @@ interface BluetoothConstants {
         val STATE_LISTEN = 1     // listening for incoming connection, not connected
         val STATE_CONNECTING = 2 // now initiating an outgoing connection
         val STATE_CONNECTED = 3  // now connected to a remote device
-        val STATE_ERROR = 4
+        val STATE_ERROR = 4  // whenever there is something unexpected happen to bluetooth
+        val STATE_RETRY_CONNECTING = 5 // trying connection with bluetooth
 
         val myUUID = UUID.fromString("00001101-0000-1000-8000-00805f9b34fb")
         val myPrivateUUID = UUID.fromString("00001101-0000-1000-5000-00805f9b34fb")

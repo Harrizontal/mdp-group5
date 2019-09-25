@@ -6,5 +6,7 @@ interface ActivityConstants {
         val REQUEST_COORDINATE = 2
         val REQUEST_BLUETOOTH_DISCONNECT = 3
         val REQUEST_SETTINGS = 4
+        val REQUEST_WAYPOINT = 5
+        val REQUEST_START_COORDINATE = 6
     }
 }
