@@ -30,6 +30,17 @@
                                           </PersistentState>
                                         </value>
                                       </entry>
+                                      <entry key="clipartAsset">
+                                        <value>
+                                          <PersistentState>
+                                            <option name="values">
+                                              <map>
+                                                <entry key="url" value="jar:file:/Applications/Android%20Studio.app/Contents/plugins/android/lib/android.jar!/images/material_design_icons/navigation/ic_close_black_24dp.xml" />
+                                              </map>
+                                            </option>
+                                          </PersistentState>
+                                        </value>
+                                      </entry>
                                       <entry key="image">
                                         <value>
                                           <PersistentState>
@@ -47,11 +58,10 @@
                                   </option>
                                   <option name="values">
                                     <map>
-                                      <entry key="assetType" value="IMAGE" />
                                       <entry key="imageAsset" value="$PROJECT_DIR$/../Downloads/icons8-back-to-100.png" />
-                                      <entry key="outputName" value="ic_left" />
+                                      <entry key="outputName" value="ic_close" />
                                       <entry key="theme" value="CUSTOM" />
-                                      <entry key="themeColor" value="175bba" />
+                                      <entry key="themeColor" value="000000" />
                                     </map>
                                   </option>
                                 </PersistentState>
@@ -146,8 +156,8 @@
                         <option name="values">
                           <map>
                             <entry key="assetSourceType" value="FILE" />
-                            <entry key="outputName" value="ic_right" />
-                            <entry key="sourceFile" value="$PROJECT_DIR$/../Desktop/SVG/right.svg" />
+                            <entry key="outputName" value="ic_icon" />
+                            <entry key="sourceFile" value="$PROJECT_DIR$/../Desktop/SVG/icon.svg" />
                           </map>
                         </option>
                       </PersistentState>

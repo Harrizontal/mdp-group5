@@ -142,8 +142,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             timerHandler.removeCallbacks(timerRunnable) // stop timer
             startTime = System.currentTimeMillis()
             timerHandler.postDelayed(timerRunnable, 0) // start timer
-            percentageExploredTextView.text = "0%"
-            arenaGridView.resetMap()
+            percentageExploredTextView.text = "0%" // percentage set to 0
+            arenaGridView.resetMap() // reset the map
+            imagesFound.clear() // clear images
+            imagesFoundRecycleAdapter.notifyDataSetChanged()
         }
 
         button_fastest_path.setOnClickListener {
@@ -183,7 +185,8 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     val sharedPrefMapUpdate = sharedPref.getBoolean(SHARED_PREF_MAP_UPDATE,DEFAULT_VALUE_MAP_UPDATE)
                     if(!sharedPrefMapUpdate){
                         Log.d("MA","Map updated")
-                        //TODO: update map here
+                        // update map
+                        arenaGridView.invalidate()
                     }
                 }
             }
@@ -427,6 +430,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 timerTextView.text ="0:00" // set 0:00
                 percentageExploredTextView.text = "0%"
                 arenaGridView.resetMap()
+                arenaGridView.invalidate() // force to update arena map even though consistent map update is turned off
                 true
             }
             R.id.menu_settings -> {

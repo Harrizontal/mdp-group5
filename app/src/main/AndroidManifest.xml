@@ -30,7 +30,8 @@
                 android:parentActivityName=".MainActivity" />
 
         <activity android:name=".DisconnectBluetoothActivity"/>
-        <activity android:name=".SelectCoordinateActivity"/>
+        <activity android:name=".SelectCoordinateActivity"
+                android:theme="@style/DialogTheme"/>
 
         <activity android:name=".SettingsActivity"
                 android:label="Settings"

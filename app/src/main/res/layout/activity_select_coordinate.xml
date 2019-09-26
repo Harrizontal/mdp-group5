@@ -1,33 +1,94 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
-        android:orientation="vertical"
+<androidx.constraintlayout.widget.ConstraintLayout android:orientation="vertical"
         xmlns:android="http://schemas.android.com/apk/res/android"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        >
-    <LinearLayout
-            android:id="@+id/coordinate_layout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <TextView
+            android:id="@+id/text_coordinate"
+            android:text="Selected coordinate (x,y)"
+            android:textAlignment="center"
+            android:textColor="@color/colorBlack"
+            android:textStyle="bold"
+            android:textSize="20sp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintBottom_toTopOf="@id/image_select_coordinate"/>
+
+    <ImageButton
+            android:id="@+id/button_close"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
-        <TextView
-                android:id="@+id/x_coordinate"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-        <TextView
-                android:id="@+id/y_coordinate"
-                android:layout_marginLeft="10dp"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
-    </LinearLayout>
-    <Button
+            android:src="@drawable/ic_close"
+            android:background="@null"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="@id/text_coordinate"
+            app:layout_constraintBottom_toTopOf="@id/image_select_coordinate"/>
+
+    <ImageView
+            android:id="@+id/image_select_coordinate"
+            android:layout_width="wrap_content"
+            android:layout_height="150dp"
+            android:scaleType="fitCenter"
+            android:background="@color/colorOnPrimary"
+            android:src="@drawable/ic_icon"
+            app:layout_constraintTop_toBottomOf="@id/button_close"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"/>
+
+    <TextView
+            android:id="@+id/text_select_coordinate_info"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/colorBlack"
+            android:textAlignment="center"
+            android:layout_marginTop="5dp"
+            android:layout_marginBottom="5dp"
+            android:padding="10dp"
+            android:text="Select a waypoint for the fastest path by tapping on the Waypoint button. You can move your robot to this particular coordinate by tapping on the Select Coordinate button"
+            app:layout_constraintTop_toBottomOf="@id/image_select_coordinate"/>
+
+    <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_cancel"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="0dp"
+            android:text="Cancel"
+            android:textColor="@color/colorBlack"
+            app:layout_constraintTop_toBottomOf="@id/text_select_coordinate_info"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintHorizontal_chainStyle="spread"
+            app:layout_constraintLeft_toLeftOf="parent"/>
+
+    <com.google.android.material.button.MaterialButton
             android:id="@+id/button_waypoint"
             android:text="Waypoint"
+            style="@style/Widget.MaterialComponents.Button"
+            android:textColor="@color/colorOnPrimary"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-    <Button
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toBottomOf="@id/text_select_coordinate_info"
+            app:layout_constraintRight_toLeftOf="@id/button_start_coordinate"
+            android:layout_marginRight="10dp"
+            app:layout_constraintBottom_toBottomOf="parent"/>
+
+    <com.google.android.material.button.MaterialButton
             android:id="@+id/button_start_coordinate"
-            android:text="Start Coordinate"
+            style="@style/Widget.MaterialComponents.Button"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
-</LinearLayout>
+            android:layout_height="wrap_content"
+            android:layout_marginLeft="10dp"
+            android:text="Start Coordinate"
+            android:textColor="@color/colorOnPrimary"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/text_select_coordinate_info"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintLeft_toRightOf="@id/button_waypoint"
+            app:layout_constraintRight_toRightOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
