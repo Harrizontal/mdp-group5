@@ -62,16 +62,35 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
     var myService: BService? = null
     var isBound = false
 
+    // part 1 and part 2 map descriptor
+    private lateinit var textPart1 : TextView
+    private lateinit var textPart2 : TextView
 
+    // percentage explored UI
     private lateinit var percentageExploredTextView: TextView
 
 
     // for images found UI
     private lateinit var imagesFoundRecycleView: RecyclerView
     private var imagesFound: ArrayList<String> = ArrayList()
+    private var imagesIdFound: ArrayList<Int> = ArrayList()
     private lateinit var imagesFoundRecycleAdapter: ImagesFoundRecycleAdapter
+    private var imagesHashMap : HashMap<Int,String> = HashMap<Int,String>()
+
     // for timer
     private lateinit var timerTextView: TextView
+
+    // store map descriptor
+    private var mapDescriptorForCopy: String = ""
+
+    // temp
+    private var imageCoordinatesHardcode: Pair<Int,Int> = Pair(3,0)
+    private var coordinateCounter = 0
+    private var storeImagesId: ArrayList<Int> = ArrayList()
+
+    // robot counter
+    private var robotMoveCounter = 5
+    private var robotFirstImg = true
 
     val timerHandler = Handler()
     var startTime: Long = 0
@@ -123,7 +142,7 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             Toast.makeText(applicationContext,"No sensor",Toast.LENGTH_SHORT).show()
         }
 
-        button_turnleft?.setOnClickListener {
+        button_turnLeft?.setOnClickListener {
             sendMessageToBluetooth("mov:left,1")
         }
 
@@ -133,6 +152,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
 
         button_up.setOnClickListener {
             sendMessageToBluetooth("mov:forward,1")
+        }
+
+        button_calibrate_right.setOnClickListener {
+            sendMessageToBluetooth("mov:H")
         }
 
         button_exploration.setOnClickListener {
@@ -146,6 +169,10 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             arenaGridView.resetMap() // reset the map
             imagesFound.clear() // clear images
             imagesFoundRecycleAdapter.notifyDataSetChanged()
+            textPart1.text = "Part 1:"
+            textPart2.text = "Part 2:"
+            mapDescriptorForCopy = ""
+
         }
 
         button_fastest_path.setOnClickListener {
@@ -155,9 +182,24 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
             timerHandler.removeCallbacks(timerRunnable) // stop timer
             startTime = System.currentTimeMillis()
             timerHandler.postDelayed(timerRunnable, 0) // start timer
+            button_exploration.isEnabled = false
         }
 
+        button_copy.setOnClickListener {
+            if(mapDescriptorForCopy.isNotBlank()){
+                var clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+                var clip = ClipData.newPlainText("label",mapDescriptorForCopy)
+                clipboard.primaryClip = clip
+                Toast.makeText(applicationContext,"Map descriptor copied",Toast.LENGTH_SHORT).show()
+            }else{
+                Toast.makeText(applicationContext,"No map descriptor to copy",Toast.LENGTH_SHORT).show()
+            }
 
+
+        }
+
+        textPart1 = findViewById(R.id.text_part_1)
+        textPart2 = findViewById(R.id.text_part_2)
 
         initializeUpdateMap()
 
@@ -254,47 +296,120 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
         override fun onReceive(context: Context?, intent: Intent?) {
             val message = intent!!.getStringExtra("IncomingMessage")
 
-            val messageParts = message.split(":")
+            Log.d("MainActivity","Message Received: "+message)
+            try {
+                val messageParts = message.split(":")
+                when (messageParts[0]) {
+                    "map" -> {
+                        mapDescriptorForCopy = messageParts[1]
+                        val mapDescriptor = Utils().getcombinedMapDescriptor(messageParts[1])
+                        arenaGridView.updateExploredAndObstacles(mapDescriptor) // update grids
+                        val percentageExplored = Utils().countExploredPercentage(mapDescriptor)
+                        val mapDescriptorSplit = messageParts[1].split(";")
+                        textPart1.text = "Part 1:" + mapDescriptorSplit[0]
+                        textPart2.text = "Part 2:" + mapDescriptorSplit[1]
+                        percentageExploredTextView.text =
+                            "${percentageExplored}%" // update percentage in UI
+                        // stops timer when its 100% explored
+                        if (percentageExplored == 100) {
+                            timerHandler.removeCallbacks(timerRunnable)
+                        }
+                    }
+                    "pos" -> {
+                        val trimmedMessage = messageParts[1].trim()
+                        val messageInnerParts = trimmedMessage.split(",")
+                        val x = messageInnerParts[0].toInt()
+                        val y = messageInnerParts[1].toInt()
+                        arenaGridView.setRobot(Pair(y, x), messageInnerParts[2])
 
-            val textMessageReceived = findViewById<TextView>(R.id.text_message_received)
-            textMessageReceived.text = "Receive: $message"
+                        if(robotMoveCounter > 0) {
+                            robotMoveCounter = robotMoveCounter - 1
+                        }
+                        Log.d("MainActivity","robotMoveCounter: "+robotMoveCounter)
+                    }
+                    "pic" -> {
+                        val trimmedMessage = messageParts[1].trim()
+                        val messageInnerParts = trimmedMessage.split(",")
 
-            when(messageParts[0]){
-                "map"->{
-                    val mapDescriptor = Utils().getcombinedMapDescriptor(messageParts[1])
-                    arenaGridView.updateExploredAndObstacles(mapDescriptor) // update grids
-                    val percentageExplored = Utils().countExploredPercentage(mapDescriptor)
-                    percentageExploredTextView.text = "${percentageExplored}%" // update percentage in UI
-                    // stops timer when its 100% explored
-                    if(percentageExplored == 100){
-                        timerHandler.removeCallbacks(timerRunnable)
+                        if (messageInnerParts[0].toInt() > 0 && messageInnerParts[0].toInt() < 16) {
+//                            val imageString =
+//                                "(${messageInnerParts[0]},${messageInnerParts[2]},${messageInnerParts[1]})"
+
+                           // if(robotMoveCounter == 0 || robotFirstImg == true){
+                                Log.d("MainActivity","Adding imaages")
+                                if(!imagesHashMap.containsKey(messageInnerParts[0].toInt())){
+                                    imagesIdFound.add(messageInnerParts[0].toInt())
+                                    imagesHashMap.put(messageInnerParts[0].toInt(),(messageInnerParts[2]+","+messageInnerParts[1]))
+
+                                }
+                                imagesIdFound.sort()
+                                robotMoveCounter = 5
+                                robotFirstImg = false
+                           // }
+
+                        }
+                        // reset images in gridview
+                        arenaGridView.resetImages()
+                        imagesFound.clear()
+                        for(id in imagesIdFound){
+                            imagesFound.add(id.toString()+","+imagesHashMap.get(id))
+                            val coordinates = imagesHashMap.get(id)!!.split(",")
+                            arenaGridView.addDetectedImages(
+                                Pair(
+                                    Pair(
+                                        coordinates[0].toInt(),
+                                        coordinates[1].toInt()
+                                    ), id
+                                )
+                            )
+                        }
+                        imagesFoundRecycleAdapter.notifyDataSetChanged()
+
+
+//
+//                        if(messageInnerParts[0].toInt() > 0 && messageInnerParts[0].toInt() < 16){
+//                            Log.d("MainActivity","image detected")
+//                            var displayAndStore: Boolean = true
+//                            for (n in storeImagesId){
+//                                if(n == messageInnerParts[0].toInt()){
+//                                    displayAndStore = false
+//                                    break
+//                                }
+//                            }
+//
+//                            if(displayAndStore && coordinateCounter < 5){
+//                                arenaGridView.addDetectedImages(
+//                                    Pair(
+//                                        Pair(
+//                                            (imageCoordinatesHardcode.first + coordinateCounter),
+//                                            imageCoordinatesHardcode.second
+//                                        ),messageInnerParts[0].toInt())
+//                                )
+//                                coordinateCounter++
+//                                storeImagesId.add(messageInnerParts[0].toInt())
+//                                val imageString = "(${messageInnerParts[0]},${(imageCoordinatesHardcode.first + coordinateCounter)},${imageCoordinatesHardcode.second})"
+//                                imagesFound.add(imageString)
+//                                imagesFoundRecycleAdapter.notifyDataSetChanged()
+//                            }
+//                        }
+                    }
+                    "mov"->{
+                        val movingMessage = messageParts[1].split(";")
+                        val movement = movingMessage[0].split(",")
+                        text_robot_status.text = "Robot Status: "+Utils().displayMovement(movement[0])
                     }
                 }
-                "pos"->{
-                    val messageInnerParts = messageParts[1].split(",")
-                    val x = messageInnerParts[0].toInt()
-                    val y = messageInnerParts[1].toInt()
-                    arenaGridView.setRobot(Pair(x,y),messageInnerParts[2])
+
+                val sharedPrefMapUpdate =
+                    sharedPref.getBoolean(SHARED_PREF_MAP_UPDATE, DEFAULT_VALUE_MAP_UPDATE)
+                if (sharedPrefMapUpdate) {
+                    // updates the 2d arena map with robot positions and map descriptor (unexplored, explored, obstacle)
+                    //mazeAdapter.notifyDataSetChanged()
                 }
-                "img"->{
-                    val messageInnerParts = messageParts[1].split(",")
-                    arenaGridView.addDetectedImages(Pair(Pair(messageInnerParts[0].toInt(),messageInnerParts[1].toInt()),messageInnerParts[2].toInt()))
-                    // updates the recyclerview for images found
-                    val imageString = "(${messageInnerParts[2]},${messageInnerParts[0]},${messageInnerParts[1]})"
-                    imagesFound.add(imageString)
-                    imagesFoundRecycleAdapter.notifyDataSetChanged()
 
-
-                }
+            } catch (ex: Exception){
+                Log.d("MainActivity","Error - please fix: "+ex)
             }
-
-            val sharedPrefMapUpdate = sharedPref.getBoolean(SHARED_PREF_MAP_UPDATE,DEFAULT_VALUE_MAP_UPDATE)
-            if(sharedPrefMapUpdate){
-                // updates the 2d arena map with robot positions and map descriptor (unexplored, explored, obstacle)
-               //mazeAdapter.notifyDataSetChanged()
-            }
-
-
         }
     }
 
@@ -431,6 +546,14 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                 percentageExploredTextView.text = "0%"
                 arenaGridView.resetMap()
                 arenaGridView.invalidate() // force to update arena map even though consistent map update is turned off
+                imagesFound.clear() // clear images
+                imagesFoundRecycleAdapter.notifyDataSetChanged()
+                textPart1.text = "Part 1:"
+                textPart2.text = "Part 2:"
+                mapDescriptorForCopy = ""
+                imagesHashMap.clear()
+                button_exploration.isEnabled = true
+                button_fastest_path.isEnabled = true
                 true
             }
             R.id.menu_settings -> {
@@ -475,23 +598,42 @@ class MainActivity : AppCompatActivity(), SensorEventListener {
                     val requestType = data?.extras?.getInt("REQUEST_COORDINATE_TYPE")
                     Log.d("MA","requestCode: $requestCode, resultCode: $resultCode, X:$xCord Y:$yCord")
 
-
-
                     when(requestType){
                         REQUEST_WAYPOINT -> {
                             arenaGridView.setWaypoint(Pair(xCord!!.toInt(),yCord!!.toInt()))
                             sendMessageToBluetooth("alg:swp,$yCord,$xCord") // sending row,column
+                            // remove touch effect on grid
+                            arenaGridView.removeTouchEffect()
                         }
                         REQUEST_START_COORDINATE -> {
                             val newCoordinates = Utils().recalculateMiddleRobotPosition(xCord!!.toInt(),yCord!!.toInt()) // gives x,y as a pair
-                            arenaGridView.setRobot(Pair(newCoordinates.first,newCoordinates.second),"n") // hard code north
-                            sendMessageToBluetooth("alg:start,${newCoordinates.second},${newCoordinates.first}")  // sending row,column
+                            val intent = Intent(this, SelectDirectionActivity::class.java)
+                            intent.putExtra("GRID_NUMBER",123) // nothing
+                            intent.putExtra("X",newCoordinates.first.toString())
+                            intent.putExtra("Y",newCoordinates.second.toString())
+                            startActivityForResult(
+                                intent,
+                                ActivityConstants.REQUEST_DIRECTION
+                            )
                         }
                     }
+                }else{
+                    arenaGridView.removeTouchEffect()
                 }
 
-                // remove touch effect on grid
-                arenaGridView.removeTouchEffect()
+            }
+            ActivityConstants.REQUEST_DIRECTION -> {
+                if (resultCode == Activity.RESULT_OK) {
+                    val xCord = data?.extras?.getString("X")
+                    val yCord = data?.extras?.getString("Y")
+                    val direction = data?.extras?.getString("direction")
+                    val newCoordinates = Utils().recalculateMiddleRobotPosition(xCord!!.toInt(), yCord!!.toInt()) // gives x,y as a pair
+                    arenaGridView.setRobot(Pair(newCoordinates.first, newCoordinates.second), direction!!)
+                    sendMessageToBluetooth("alg:start,${newCoordinates.second},${newCoordinates.first},$direction")  // sending row,column
+                    arenaGridView.removeTouchEffect()
+                }else{
+                    arenaGridView.removeTouchEffect()
+                }
             }
             // happens when user wants to disconnect bluetooth
             ActivityConstants.REQUEST_BLUETOOTH_DISCONNECT -> {

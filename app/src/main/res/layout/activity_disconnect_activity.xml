@@ -1,17 +1,43 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        android:orientation="vertical" android:layout_width="match_parent"
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:orientation="vertical"
+        android:layout_width="500dp"
         android:layout_height="match_parent">
 
     <TextView
+            android:id="@+id/text_disconnect"
+            android:text="Do you want to disconnect bluetooth)"
+            android:textAlignment="center"
+            android:textColor="@color/colorBlack"
+            android:textStyle="bold"
+            android:textSize="20sp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"/>
+
+    <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_cancel"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Disconnect bluetooth? Well you only got one choice for now."
-        />
-    <Button
-            android:id="@+id/button_disconnect"
-            android:text="Yes"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" />
+            android:layout_margin="0dp"
+            android:text="Cancel"
+            android:textColor="@color/colorBlack"
+            app:layout_constraintTop_toBottomOf="@id/text_disconnect"
+            app:layout_constraintLeft_toRightOf="@id/button_disconnect"/>
 
-</LinearLayout>
+    <com.google.android.material.button.MaterialButton
+            android:id="@+id/button_disconnect"
+            style="@style/Widget.MaterialComponents.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="0dp"
+            android:text="Yes"
+            app:layout_constraintTop_toBottomOf="@id/text_disconnect"
+            app:layout_constraintRight_toRightOf="parent"
+            android:textColor="@color/colorBlack"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

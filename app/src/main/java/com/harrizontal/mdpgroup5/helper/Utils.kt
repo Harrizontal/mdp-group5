@@ -20,16 +20,20 @@ class Utils {
 
         val testingDescriptor7 = "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;00000000000003800000383800100000000400080010fe3004000000006000c0100020004000"
 
-        val mapDescriptor = testingDescriptor2.split(";")
+        val testingDescriptor8 = "ff007e00fc004000800300040000000000000000000000000000000000000000000000000003;000002\n".trim()
+
+        val trimmedMapDescriptor = mapDescriptorString.trim()
+        val mapDescriptor = trimmedMapDescriptor.split(";")
 
         val firstDescriptor = mapDescriptor[0]
         val secondDescriptor = mapDescriptor[1]
 
+        Log.d("Utils","firstDescriptor: $firstDescriptor")
+        Log.d("Utils","secondDescriptor: $secondDescriptor")
         val binaryFirstDescriptor = hexToBinary(firstDescriptor).drop(2).dropLast(2)
+        //Log.d("Utils","binaryFirstDescriptor: $binaryFirstDescriptor")
         val binarySecondDescriptor = hexToBinary(secondDescriptor)
-
-        Log.d("Utils","binaryFirstDescriptor: $binaryFirstDescriptor")
-        Log.d("Utils","binarySecondDescriptor: $binarySecondDescriptor")
+        //Log.d("Utils","binarySecondDescriptor: $binarySecondDescriptor")
 
         val mapDescriptor2 = ArrayList<Char>()
 
@@ -51,7 +55,7 @@ class Utils {
             }
         }
 
-        Log.d("Utils","mapDescriptor2: ${mapDescriptor2}")
+        //Log.d("Utils","mapDescriptor2: ${mapDescriptor2}")
         return mapDescriptor2
     }
 
@@ -60,8 +64,11 @@ class Utils {
         val paddings = "0000"
         var i = 0
         while (i < s.length) {
+            //Log.d("Utils","s[i]: "+s[i])
             val hex = Integer.parseInt(s[i].toString(), 16)
+            //Log.d("Utils","hex: $hex")
             val binary = Integer.toBinaryString(hex)
+            //Log.d("Utils","binary: $binary")
             val padding = paddings.substring(0, paddings.length - binary.length)
             sb.append(padding)
             sb.append(binary)
@@ -115,5 +122,18 @@ class Utils {
         val percentage = (exploredCount/ (MDPConstants.NUM_ROWS * MDPConstants.NUM_COLUMNS))* 100
         //Log.d("Utils","exploredCount: $exploredCount percentage explored: $percentage")
         return percentage.roundToInt()
+    }
+
+    fun displayMovement(movement: String): String{
+
+        when(movement) {
+            "forward" -> return "Forwarding"
+            "right" -> return "Rotating Right"
+            "left" -> return "Rotating Left"
+            "I" -> return "Right Wall Calibrating"
+            "G" -> return "Top Right Way Calibrating"
+            else ->
+                return "Moving"
+        }
     }
 }

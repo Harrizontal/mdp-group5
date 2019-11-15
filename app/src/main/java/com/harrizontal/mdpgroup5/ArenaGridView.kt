@@ -26,7 +26,7 @@ class ArenaGridView(context: Context?, attrs: AttributeSet?) : View(context, att
 
     private var mapDescriptor: ArrayList<Char> = ArrayList()
     private var robot: Pair<Int,Int> = Pair(1,1)
-    private var robotDirection: String = "n"
+    private var robotDirection: String = "e"
     private var startZone: ArrayList<Pair<Int,Int>> = ArrayList()
     private var endZone: ArrayList<Pair<Int,Int>> = ArrayList()
     private var images: ArrayList<Pair<Pair<Int,Int>,Int>> = ArrayList()
@@ -440,8 +440,17 @@ class ArenaGridView(context: Context?, attrs: AttributeSet?) : View(context, att
         waypoint = null
         images.clear()
         robot = Pair(1,1)
-        robotDirection = "n"
+        robotDirection = "e"
         mapDescriptor.clear()
+
+        if(autoUpdate){
+            Log.d("ArenaGridView","Resetting map")
+            invalidate()
+        }
+    }
+
+    fun resetImages(){
+        images.clear()
 
         if(autoUpdate){
             Log.d("ArenaGridView","Resetting map")

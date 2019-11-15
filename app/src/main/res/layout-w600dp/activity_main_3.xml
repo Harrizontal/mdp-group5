@@ -171,20 +171,83 @@
                     app:layout_constraintRight_toRightOf="parent"
                     app:layout_constraintBottom_toBottomOf="@id/arenagridview"/>
 
-            <TextView
-                    android:id="@+id/text_message_received"
+            <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/card_map_descriptor"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="No text received"
+                    android:layout_marginTop="10dp"
                     android:layout_marginLeft="10dp"
+                    android:layout_marginRight="10dp"
+                    android:layout_marginBottom="10dp"
+                    app:contentPadding="10dp"
                     app:layout_constraintTop_toBottomOf="@id/arenagridview"
                     app:layout_constraintStart_toStartOf="@id/arenagridview"
-                    app:layout_constraintRight_toRightOf="parent"/>
+                    app:layout_constraintRight_toRightOf="parent">
+
+                <androidx.constraintlayout.widget.ConstraintLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content">
+
+                    <TextView
+                            android:id="@+id/text_title_map_descriptor"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textStyle="bold"
+                            android:textColor="@color/colorBlack"
+                            app:layout_constraintTop_toTopOf="parent"
+                            app:layout_constraintLeft_toLeftOf="parent"
+                            app:layout_constraintRight_toRightOf="parent"
+                            android:text="Map Descriptor"/>
+
+                    <TextView
+                            android:id="@+id/text_part_1"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:textStyle="normal"
+                            android:textColor="@color/colorBlack"
+                            android:textSize="10sp"
+                            android:layout_marginRight="20dp"
+                            android:layout_marginEnd="20dp"
+                            android:lines="2"
+                            app:layout_constraintTop_toBottomOf="@id/text_title_map_descriptor"
+                            app:layout_constraintLeft_toLeftOf="parent"
+                            app:layout_constraintRight_toLeftOf="@id/button_copy"
+                            android:text="Part 1:"/>
+
+                    <TextView
+                            android:id="@+id/text_part_2"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:textStyle="normal"
+                            android:textColor="@color/colorBlack"
+                            android:textSize="10sp"
+                            android:layout_marginRight="20dp"
+                            android:layout_marginEnd="20dp"
+                            android:lines="2"
+                            app:layout_constraintTop_toBottomOf="@id/text_part_1"
+                            app:layout_constraintLeft_toLeftOf="parent"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintRight_toLeftOf="@id/button_copy"
+                            android:text="Part 2:"/>
+
+                    <com.google.android.material.button.MaterialButton
+                            android:id="@+id/button_copy"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Copy"
+                            app:layout_constraintRight_toRightOf="parent"
+                            app:layout_constraintTop_toTopOf="parent"
+                            app:layout_constraintBottom_toBottomOf="parent" />
+
+
+                </androidx.constraintlayout.widget.ConstraintLayout>
+
+            </com.google.android.material.card.MaterialCardView>
 
             <androidx.constraintlayout.widget.ConstraintLayout
                     android:layout_width="match_parent"
                     android:layout_height="0dp"
-                    app:layout_constraintTop_toBottomOf="@id/text_message_received"
+                    app:layout_constraintTop_toBottomOf="@id/card_map_descriptor"
                     app:layout_constraintLeft_toLeftOf="parent"
                     app:layout_constraintRight_toRightOf="parent"
                     app:layout_constraintBottom_toBottomOf="parent">
@@ -225,31 +288,49 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:textStyle="normal"
+                                android:textSize="13sp"
                                 android:textColor="@color/colorBlack"
                                 app:layout_constraintTop_toBottomOf="@id/text_title_robot"
                                 app:layout_constraintLeft_toLeftOf="parent"
                                 app:layout_constraintRight_toRightOf="parent"
-                                android:text="Robot Status: Moving up"/>
+                                android:text="Robot Status:"/>
 
                         <Button
-                                android:text="Exploration"
+                                android:text="Explore"
                                 android:id="@+id/button_exploration"
-                                android:layout_width="match_parent"
+                                android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
+                                android:layout_marginRight="5dp"
+                                android:layout_marginLeft="5dp"
                                 app:layout_constraintTop_toBottomOf="@id/text_robot_status"
                                 app:layout_constraintLeft_toLeftOf="parent"
-                                app:layout_constraintRight_toRightOf="parent"
-                                app:layout_constraintBottom_toTopOf="@id/button_fastest_path"/>
+                                app:layout_constraintRight_toLeftOf="@id/button_fastest_path"
+                                app:layout_constraintBottom_toBottomOf="parent"/>
 
                         <Button
-                                android:text="Fastest Path"
+                                android:text="Fast"
                                 android:id="@+id/button_fastest_path"
-                                android:layout_width="match_parent"
+                                android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                app:layout_constraintTop_toBottomOf="@id/button_exploration"
-                                app:layout_constraintLeft_toLeftOf="parent"
+                                android:layout_marginLeft="5dp"
+                                android:layout_marginRight="5dp"
+                                app:layout_constraintTop_toBottomOf="@id/text_robot_status"
+                                app:layout_constraintLeft_toRightOf="@id/button_exploration"
+                                app:layout_constraintRight_toLeftOf="@id/button_calibrate_right"
+                                app:layout_constraintBottom_toBottomOf="parent"/>
+
+                        <Button
+                                android:text="Cali"
+                                android:id="@+id/button_calibrate_right"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginLeft="5dp"
+                                android:layout_marginRight="5dp"
+                                app:layout_constraintTop_toBottomOf="@id/text_robot_status"
+                                app:layout_constraintLeft_toRightOf="@id/button_fastest_path"
                                 app:layout_constraintRight_toRightOf="parent"
                                 app:layout_constraintBottom_toBottomOf="parent"/>
+
 
                     </androidx.constraintlayout.widget.ConstraintLayout>
 
@@ -260,11 +341,9 @@
                         android:layout_width="0dp"
                         android:layout_height="match_parent"
                         android:layout_marginTop="10dp"
-                        android:layout_marginLeft="10dp"
                         android:layout_marginRight="10dp"
                         android:layout_marginBottom="10dp"
-                        app:contentPadding="10dp"
-                        app:layout_constraintHorizontal_weight="4"
+                        app:layout_constraintHorizontal_weight="3"
                         app:layout_constraintTop_toTopOf="parent"
                         app:layout_constraintRight_toRightOf="parent"
                         app:layout_constraintLeft_toRightOf="@id/card_robot"
@@ -276,8 +355,8 @@
 
                         <ImageButton
                                 android:id="@+id/button_up"
-                                android:layout_width="80dp"
-                                android:layout_height="80dp"
+                                android:layout_width="50dp"
+                                android:layout_height="50dp"
                                 android:src="@drawable/ic_up"
                                 android:background="?attr/selectableItemBackgroundBorderless"
                                 android:scaleType="fitXY"
@@ -297,8 +376,8 @@
 
                             <ImageButton
                                     android:id="@+id/button_turnLeft"
-                                    android:layout_width="80dp"
-                                    android:layout_height="80dp"
+                                    android:layout_width="50dp"
+                                    android:layout_height="50dp"
                                     android:src="@drawable/ic_left"
                                     android:background="?attr/selectableItemBackgroundBorderless"
                                     android:scaleType="fitXY"
@@ -308,8 +387,8 @@
 
                             <ImageButton
                                     android:id="@+id/button_turnRight"
-                                    android:layout_width="80dp"
-                                    android:layout_height="80dp"
+                                    android:layout_width="50dp"
+                                    android:layout_height="50dp"
                                     android:src="@drawable/ic_right"
                                     android:background="?attr/selectableItemBackgroundBorderless"
                                     android:scaleType="fitXY"

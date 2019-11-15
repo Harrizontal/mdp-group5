@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
+import kotlinx.android.synthetic.main.activity_disconnect_activity.*
 
 class DisconnectBluetoothActivity : Activity() {
 
@@ -15,6 +16,10 @@ class DisconnectBluetoothActivity : Activity() {
 
         buttonDisconnect.setOnClickListener {
             setResult(RESULT_OK)
+            finish()
+        }
+
+        button_cancel.setOnClickListener {
             finish()
         }
     }
